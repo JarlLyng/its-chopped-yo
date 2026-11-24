@@ -1,0 +1,42 @@
+# OS and editors
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Swift / Xcode
+.build/
+.swiftpm/
+DerivedData/
+xcuserdata/
+# The Xcode project is generated with XcodeGen (project.yml), as in Whiskerling
+*.xcodeproj/
+
+# Android / Gradle
+.gradle/
+.kotlin/
+build/
+local.properties
+*.keystore
+*.jks
+
+# Test runs write here; expected files live in testdata/expected/
+testdata/out/
+
+# Python
+__pycache__/
+
+# AI tooling stays local (IAMJARL convention: one AGENTS.md, nothing else)
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.cursor/
+.cursorrules
+.windsurfrules
+.clinerules
+.aider*
+.continue/
+.codex/
+.mcp.json
+GEMINI.md
+.github/copilot-instructions.md
