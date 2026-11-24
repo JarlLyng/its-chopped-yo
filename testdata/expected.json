@@ -1,0 +1,66 @@
+{
+  "specVersion": "0.1",
+  "outputs": {
+    "rightpan_sum_24": {
+      "rightpan_sum_24.wav": "1ab83b8b8b2d5e97438ca12e1a7f03c2d7bb78b43c4c53fdcf8397fdd425423c"
+    },
+    "stereo_keep_16_dither": {
+      "stereo_keep_16_dither.wav": "23a65e7ee18f363543c092d5243bd1ffc90af73d8cef27d6bda8e2372518a8c9"
+    },
+    "trim_fade_linear_16": {
+      "trim_fade_linear_16.wav": "1fa6d0ecd626b75c5ec8efcb18f07fb0c113a7fdd86bd8c859c35c6499615598"
+    },
+    "trim_fade_equalpower_16_dither": {
+      "trim_fade_equalpower_16_dither.wav": "6964ff5f89518667376460fadaa5db5b5b0e9e9ceee86f20f3f2b28cb825a019"
+    },
+    "normalize_quiet_24": {
+      "normalize_quiet_24.wav": "52495f868bdd19b5317684d3b98c620d5313b94581e3629c04c2066dbe2d3ee0"
+    },
+    "surround51_sum_24": {
+      "surround51_sum_24.wav": "de08b31b25baa73d06fb036271fed639e7223d8453cccfe4a80038841f5172ae"
+    },
+    "float_overs_clamp_16": {
+      "float_overs_clamp_16.wav": "314e7eadddc396bc56eee69d4f8acf52e11acaa030f2b6f65faf755035af231e"
+    },
+    "float_overs_normalized_16": {
+      "float_overs_normalized_16.wav": "f97572f5eef7ab885bb7a49c5f21aff8bed908a60299da52beb5d9cd7feadfa2"
+    },
+    "u8_to_16": {
+      "u8_to_16.wav": "2b61612308d175233922df1f1f786473384686a841d13f6c7ff1dea6ee435f59"
+    },
+    "extensible_left_24": {
+      "extensible_left_24.wav": "38f510b27c086f9ccbcdae6750bf243293c8fc98d17da4ac675795196e2d7d2f"
+    },
+    "extensible_right_16_dither": {
+      "extensible_right_16_dither.wav": "7a0e923870e7b6fb5f6b000b11eb53b543984c250c7cf9e22096b237b2e89006"
+    },
+    "odd_frames_24": {
+      "odd_frames_24.wav": "21af8f661ed3a47c836f77399db71993907a7313bf1bc445bd970281abc12d9b"
+    },
+    "float64_to_24": {
+      "float64_to_24.wav": "dfebc20a0de68304e896a53d3139711fc2b7200004c3faef9243e821f38a05aa"
+    },
+    "rate_44k_kept_24": {
+      "rate_44k_kept_24.wav": "acc7bbb3bf48f6f53c4095e46a901310e08aab575ecb2df857d5426d0f7c107e"
+    },
+    "skips_unknown_chunks_16": {
+      "skips_unknown_chunks_16.wav": "1d1d384295bc84fa73b3a4864ff590ce7971506821b43a6d29590132be959c38"
+    },
+    "slices_8": {
+      "slices_8_01.wav": "6619ba70ec34d24fc9549eca76a27e05644837d048e32e21f198335bd25a93b8",
+      "slices_8_02.wav": "9ea555e1c9ebc734616f05c0a2a3a4026d3ac4994df0e6a783752e37e19146b0",
+      "slices_8_03.wav": "e1995705899a17c29cbca61a58a47696c8414156e109af531545fb4f4225e412",
+      "slices_8_04.wav": "9ea555e1c9ebc734616f05c0a2a3a4026d3ac4994df0e6a783752e37e19146b0",
+      "slices_8_05.wav": "e1995705899a17c29cbca61a58a47696c8414156e109af531545fb4f4225e412",
+      "slices_8_06.wav": "9ea555e1c9ebc734616f05c0a2a3a4026d3ac4994df0e6a783752e37e19146b0",
+      "slices_8_07.wav": "e1995705899a17c29cbca61a58a47696c8414156e109af531545fb4f4225e412",
+      "slices_8_08.wav": "9ea555e1c9ebc734616f05c0a2a3a4026d3ac4994df0e6a783752e37e19146b0"
+    },
+    "chain_3": {
+      "chain_3.wav": "4360473d65a46bdac81b89aa395515c950732626c4db52b2701bcef96aca7340"
+    },
+    "chain_3_slots_4": {
+      "chain_3_slots_4.wav": "8c67e84916cc7b68fe28b0c71eba98621ac469eaea1644310b270fb276e1f456"
+    }
+  }
+}
