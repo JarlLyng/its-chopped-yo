@@ -12,6 +12,16 @@ android {
 
     defaultConfig {
         minSdk = 29
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    sourceSets {
+        // The case runner is shared by the JVM test and the device test.
+        getByName("test").kotlin.directories.add("src/sharedTest/kotlin")
+        getByName("androidTest").kotlin.directories.add("src/sharedTest/kotlin")
+        // testdata/ (inputs, cases, expected hashes) goes into the test APK as assets/testdata/.
+        // A plain path, since AGP 9 takes no Provider here; copyTestdataAssets fills it.
+        getByName("androidTest").assets.directories.add("build/generated/testdata-assets")
     }
 
     compileOptions {
@@ -31,6 +41,24 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     // A real org.json for the JVM tests (Android's own is a stub there).
     testImplementation("org.json:json:20240303")
+
+    androidTestImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+}
+
+// ---- The test files for the device test
+
+val copyTestdataAssets by tasks.registering(Sync::class) {
+    description = "Copies testdata/ (without outputs) into the test APK's assets."
+    from(rootProject.file("../testdata")) {
+        include("cases.json", "expected.json", "input/**")
+    }
+    into(layout.buildDirectory.dir("generated/testdata-assets/testdata"))
+}
+
+tasks.matching { it.name.contains("AndroidTestAssets") }.configureEach {
+    dependsOn(copyTestdataAssets)
 }
 
 // ---- The host build of libsamplerate and the JNI bridge, for the JVM unit tests

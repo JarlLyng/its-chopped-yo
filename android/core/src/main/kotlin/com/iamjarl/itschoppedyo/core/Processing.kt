@@ -153,16 +153,15 @@ object Processing {
         }
     }
 
-    /** Interleaved little-endian PCM, 2 or 3 bytes per sample. */
-    fun quantize(a: Audio, bits: Int, dither: Boolean): ByteArray {
+    /** Interleaved integers in file order. */
+    fun quantize(a: Audio, bits: Int, dither: Boolean): IntArray {
         if (bits != 16 && bits != 24) fail(Reason.BAD_BITS)
         val scale = (1 shl (bits - 1)).toDouble()
         val hi = (1 shl (bits - 1)) - 1
         val lo = -(1 shl (bits - 1))
         val rng = XorShift32()
         val nch = a.channels.size
-        val bytesPer = bits / 8
-        val out = ByteArray(a.frameCount * nch * bytesPer)
+        val out = IntArray(a.frameCount * nch)
         var o = 0
         for (i in 0 until a.frameCount) {
             for (c in 0 until nch) {
@@ -172,7 +171,23 @@ object Processing {
                     val r2 = rng.next()
                     v = v + (r1 + r2 - 1.0)
                 }
-                val q = floor(v + 0.5).toInt().coerceIn(lo, hi)
+                out[o++] = floor(v + 0.5).toInt().coerceIn(lo, hi)
+            }
+        }
+        return out
+    }
+
+    /** Two's complement, 2 or 3 bytes per sample, in either byte order. */
+    fun pack(samples: IntArray, bits: Int, bigEndian: Boolean): ByteArray {
+        val width = bits / 8
+        val out = ByteArray(samples.size * width)
+        var o = 0
+        for (q in samples) {
+            if (bigEndian) {
+                if (bits == 24) out[o++] = ((q shr 16) and 0xFF).toByte()
+                out[o++] = ((q shr 8) and 0xFF).toByte()
+                out[o++] = (q and 0xFF).toByte()
+            } else {
                 out[o++] = (q and 0xFF).toByte()
                 out[o++] = ((q shr 8) and 0xFF).toByte()
                 if (bits == 24) out[o++] = ((q shr 16) and 0xFF).toByte()
@@ -181,9 +196,14 @@ object Processing {
         return out
     }
 
-    /** Steps 6 and 7: quantize and write one WAV file. */
-    fun encode(a: Audio, s: Settings): ByteArray =
-        Wav.write(a.sampleRate, a.channels.size, s.bits, quantize(a, s.bits, s.dither))
+    /** Steps 6 and 7: quantize and write one WAV or AIFF file. */
+    fun encode(a: Audio, s: Settings): ByteArray {
+        val samples = quantize(a, s.bits, s.dither)
+        return when (s.format) {
+            OutputFormat.WAV -> Wav.write(a.sampleRate, a.channels.size, s.bits, pack(samples, s.bits, false))
+            OutputFormat.AIFF -> Aiff.write(a.sampleRate, a.channels.size, s.bits, a.frameCount, pack(samples, s.bits, true))
+        }
+    }
 
     // ---- Sections 9 and 10
 

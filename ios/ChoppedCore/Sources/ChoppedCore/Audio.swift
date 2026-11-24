@@ -1,4 +1,4 @@
-// specs/audio-processing.md, version 0.2. Read the spec before changing anything here: the same
+// specs/audio-processing.md, version 0.3. Read the spec before changing anything here: the same
 // bytes on iOS and Android depend on doing exactly what it says, in the order it says.
 
 /// Audio as 64-bit floats, one array per channel (`channels[ch][frame]`).
@@ -16,6 +16,8 @@ public struct Audio: Equatable {
 
 public enum ChoppedError: Error, Equatable {
     case notWave
+    case notAiff
+    case unsupportedSampleRate
     case dataBeforeFmt
     case noData
     case badFormat
@@ -35,6 +37,10 @@ public enum ChoppedError: Error, Equatable {
 
 public enum MonoMode: String {
     case keep, sum, left, right
+}
+
+public enum OutputFormat: String {
+    case wav, aiff
 }
 
 public enum FadeCurve: String {
@@ -64,6 +70,7 @@ public struct Settings: Equatable {
     public var normalizeDB: Double?
     public var bits: Int = 16
     public var dither: Bool = false
+    public var format: OutputFormat = .wav
 
     public init() {}
 
@@ -71,6 +78,6 @@ public struct Settings: Equatable {
         a.mono == b.mono && a.trim?.start == b.trim?.start && a.trim?.end == b.trim?.end
             && a.fadeIn == b.fadeIn && a.fadeOut == b.fadeOut && a.sampleRate == b.sampleRate
             && a.normalizeDB == b.normalizeDB
-            && a.bits == b.bits && a.dither == b.dither
+            && a.bits == b.bits && a.dither == b.dither && a.format == b.format
     }
 }

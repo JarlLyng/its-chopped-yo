@@ -1,5 +1,5 @@
 {
-  "specVersion": "0.2",
+  "specVersion": "0.3",
   "cases": [
     {
       "id": "rightpan_sum_24",
@@ -332,6 +332,103 @@
         "dither": true,
         "normalize": -0.3,
         "sampleRate": 48000
+      }
+    },
+    {
+      "id": "aiff_16_to_wav_16",
+      "inputs": [
+        "sine_st16.aif"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 16,
+        "dither": false
+      }
+    },
+    {
+      "id": "aiff_24_44k_odd_to_aiff_24",
+      "inputs": [
+        "sine_m24_44k.aif"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 24,
+        "dither": false,
+        "format": "aiff"
+      }
+    },
+    {
+      "id": "aiff_8_signed_to_16",
+      "inputs": [
+        "s8_m.aif"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 16,
+        "dither": false
+      }
+    },
+    {
+      "id": "aifc_sowt_sum_to_aiff_16_dither",
+      "inputs": [
+        "sowt_st16.aifc"
+      ],
+      "settings": {
+        "mono": "sum",
+        "bits": 16,
+        "dither": true,
+        "format": "aiff"
+      }
+    },
+    {
+      "id": "aifc_fl32_normalized_to_aiff_24",
+      "inputs": [
+        "fl32_m.aifc"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 24,
+        "dither": false,
+        "normalize": -0.3,
+        "format": "aiff"
+      }
+    },
+    {
+      "id": "aiff_odd_layout_to_wav_16",
+      "inputs": [
+        "odd_layout_m16.aif"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 16,
+        "dither": false
+      }
+    },
+    {
+      "id": "wav_to_aiff_46875_16_dither",
+      "inputs": [
+        "sine_m16.wav"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 16,
+        "dither": true,
+        "sampleRate": 46875,
+        "format": "aiff"
+      }
+    },
+    {
+      "id": "slices_4_aiff",
+      "mode": "slices",
+      "slices": 4,
+      "inputs": [
+        "sine_st16.aif"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 16,
+        "dither": false,
+        "format": "aiff"
       }
     },
     {

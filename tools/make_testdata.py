@@ -71,6 +71,48 @@ def write_input(name, rate, samples_by_ch, bits, tag=1, extensible=False, extra_
     (INPUT / name).write_bytes(blob)
 
 
+def _extended(rate):
+    """80-bit extended from a float, computed with frexp: independent of reference.rate_to_extended."""
+    mant, exp = math.frexp(float(rate))  # rate = mant * 2**exp, 0.5 <= mant < 1
+    return (16383 + exp - 1).to_bytes(2, "big") + int(mant * (1 << 64)).to_bytes(8, "big")
+
+
+def write_aiff_input(name, rate, samples_by_ch, bits, comp=None, comm_last=False,
+                     ssnd_offset=0, extra_chunk=None):
+    """AIFF (comp None), or AIFF-C with comp b"NONE", b"sowt", b"fl32"."""
+    if (INPUT / name).exists() and not FORCE_INPUTS:
+        return
+    nch = len(samples_by_ch)
+    frames = len(samples_by_ch[0])
+    data = bytearray()
+    for i in range(frames):
+        for c in range(nch):
+            x = samples_by_ch[c][i]
+            if comp == b"fl32":
+                data += struct.pack(">f", x)
+            elif comp == b"sowt":
+                data += struct.pack("<h", max(-32768, min(32767, int(round(x * 32767)))))
+            else:
+                full = 1 << (bits - 1)
+                q = max(-full, min(full - 1, int(round(x * (full - 1)))))
+                data += (q & ((1 << bits) - 1)).to_bytes(bits // 8, "big")
+    comm = struct.pack(">HIH", nch, frames, bits) + _extended(rate)
+    if comp is not None:
+        comm += comp + b"\x00\x00"  # empty pstring, padded to even
+    ssnd = struct.pack(">II", ssnd_offset, 0) + b"\x00" * ssnd_offset + bytes(data)
+
+    def chunk(cid, body):
+        return cid + struct.pack(">I", len(body)) + body + (b"\x00" if len(body) & 1 else b"")
+
+    parts = [chunk(b"COMM", comm), chunk(b"SSND", ssnd)]
+    if comm_last:
+        parts.reverse()
+    if extra_chunk:
+        parts.insert(1, chunk(*extra_chunk))
+    body = (b"AIFC" if comp is not None else b"AIFF") + b"".join(parts)
+    (INPUT / name).write_bytes(b"FORM" + struct.pack(">I", len(body)) + body)
+
+
 def sine(freq, amp, frames, rate, phase=0.0):
     return [amp * math.sin(2.0 * math.pi * freq * i / rate + phase) for i in range(frames)]
 
@@ -99,6 +141,16 @@ def make_inputs():
     write_input("sine_m16_44k.wav", 44100, [sine(1000, 0.7, 4410, 44100)], 16)
     write_input("chunks_m16.wav", r, [sine(880, 0.5, 2400, r)], 16,
                 extra_chunk=(b"LIST", b"INFOISFT\x05\x00\x00\x00test\x00"))
+    # Version 0.3: AIFF and AIFF-C inputs.
+    write_aiff_input("sine_st16.aif", r, [sine(440, 0.8, 4800, r), sine(660, 0.6, 4800, r)], 16)
+    write_aiff_input("sine_m24_44k.aif", 44100, [sine(1000, 0.7, 4411, 44100)], 24)
+    write_aiff_input("s8_m.aif", 22050, [sine(300, 0.9, 2205, 22050)], 8)
+    write_aiff_input("sowt_st16.aifc", r, [sine(250, 0.5, 4800, r), noise(0.4, 4800, 13)], 16,
+                     comp=b"sowt")
+    write_aiff_input("fl32_m.aifc", r, [[1.3 * v for v in sine(330, 1.0, 4800, r)]], 32,
+                     comp=b"fl32")
+    write_aiff_input("odd_layout_m16.aif", 32000, [sine(500, 0.5, 3201, 32000)], 16,
+                     comm_last=True, ssnd_offset=4, extra_chunk=(b"NAME", b"odd"))
     # Version 0.2: a 96 kHz stereo file for resampling down.
     write_input("sine_st24_96k.wav", 96000,
                 [sine(1000, 0.8, 9600, 96000), sine(15000, 0.5, 9600, 96000)], 24)
@@ -166,6 +218,22 @@ def cases():
          "inputs": ["sine_m16_44k.wav", "sine_m16.wav", "u8_m.wav"],
          "settings": {"mono": "sum", "bits": 16, "dither": True, "normalize": -0.3,
                       "sampleRate": 48000}},
+        # Version 0.3: AIFF in and out.
+        {"id": "aiff_16_to_wav_16", "inputs": ["sine_st16.aif"], "settings": base16},
+        {"id": "aiff_24_44k_odd_to_aiff_24", "inputs": ["sine_m24_44k.aif"],
+         "settings": {"mono": "keep", "bits": 24, "dither": False, "format": "aiff"}},
+        {"id": "aiff_8_signed_to_16", "inputs": ["s8_m.aif"], "settings": base16},
+        {"id": "aifc_sowt_sum_to_aiff_16_dither", "inputs": ["sowt_st16.aifc"],
+         "settings": {"mono": "sum", "bits": 16, "dither": True, "format": "aiff"}},
+        {"id": "aifc_fl32_normalized_to_aiff_24", "inputs": ["fl32_m.aifc"],
+         "settings": {"mono": "keep", "bits": 24, "dither": False, "normalize": -0.3,
+                      "format": "aiff"}},
+        {"id": "aiff_odd_layout_to_wav_16", "inputs": ["odd_layout_m16.aif"], "settings": base16},
+        {"id": "wav_to_aiff_46875_16_dither", "inputs": ["sine_m16.wav"],
+         "settings": {"mono": "keep", "bits": 16, "dither": True, "sampleRate": 46875,
+                      "format": "aiff"}},
+        {"id": "slices_4_aiff", "mode": "slices", "slices": 4, "inputs": ["sine_st16.aif"],
+         "settings": {"mono": "keep", "bits": 16, "dither": False, "format": "aiff"}},
         {"id": "chain_3_slots_4", "mode": "chain", "slots": 4,
          "inputs": ["sine_m16.wav", "odd_m24.wav", "quiet_m24.wav"],
          "settings": {"mono": "sum", "bits": 24, "dither": False}},
@@ -178,7 +246,7 @@ def main():
     (ROOT / "cases.json").write_text(
         json.dumps({"specVersion": ref.SPEC_VERSION, "cases": all_cases}, indent=2) + "\n")
     EXPECTED.mkdir(parents=True, exist_ok=True)
-    for old in EXPECTED.glob("*.wav"):
+    for old in list(EXPECTED.glob("*.wav")) + list(EXPECTED.glob("*.aif")):
         old.unlink()
     expected = {}
     for case in all_cases:

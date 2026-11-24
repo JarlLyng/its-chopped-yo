@@ -1,8 +1,8 @@
 # It's chopped, yo!
 
 Sample prep for hardware samplers, on the phone. Record or import a sound, trim it, fade it,
-normalize it, sum it to mono properly (both channels, not just the left one) and export it at the
-sample rate and bit depth your machine wants. Whole folders at once, equal slices and sample chains
+normalize it, sum it to mono properly (both channels, not just the left one) and export it as WAV or
+AIFF at the sample rate and bit depth your machine wants. Whole folders at once, equal slices and sample chains
 are part of the plan too.
 
 It's built for iPhone and Android as two native apps, SwiftUI on iOS and Kotlin with Jetpack Compose
@@ -46,8 +46,14 @@ The Kotlin core, on the Mac (JDK 17 and the Android SDK):
 cd android && ./gradlew :core:testDebugUnitTest
 ```
 
-Both test suites read `testdata/cases.json`, run every case and compare the SHA-256 of each output
-file with `testdata/expected.json`. CI runs both, and rebuilds the expected files on Linux to check
+The Kotlin core on an Android emulator or phone (Android's runtime and the NDK build):
+
+```bash
+cd android && ./gradlew :core:connectedDebugAndroidTest
+```
+
+All of them read `testdata/cases.json`, run every case and compare the SHA-256 of each output file
+with `testdata/expected.json`. CI runs both, and rebuilds the expected files on Linux to check
 that they come out the same on another CPU architecture.
 
 ## Related apps

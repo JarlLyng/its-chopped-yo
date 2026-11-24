@@ -175,16 +175,16 @@ public enum Processing {
         }
     }
 
-    /// Interleaved little-endian PCM, 2 or 3 bytes per sample.
-    public static func quantize(_ a: Audio, bits: Int, dither: Bool) throws -> [UInt8] {
+    /// Interleaved integers in file order.
+    public static func quantize(_ a: Audio, bits: Int, dither: Bool) throws -> [Int32] {
         guard bits == 16 || bits == 24 else { throw ChoppedError.badBits }
         let scale = Double(1 << (bits - 1))
         let hi = (1 << (bits - 1)) - 1
         let lo = -(1 << (bits - 1))
         var rng = XorShift32()
         let nch = a.channels.count
-        var out: [UInt8] = []
-        out.reserveCapacity(a.frameCount * nch * bits / 8)
+        var out: [Int32] = []
+        out.reserveCapacity(a.frameCount * nch)
         for i in 0..<a.frameCount {
             for c in 0..<nch {
                 var v = a.channels[c][i] * scale
@@ -195,7 +195,23 @@ public enum Processing {
                 }
                 var q = Int((v + 0.5).rounded(.down))
                 if q > hi { q = hi } else if q < lo { q = lo }
-                let u = UInt32(bitPattern: Int32(q))
+                out.append(Int32(q))
+            }
+        }
+        return out
+    }
+
+    /// Two's complement, 2 or 3 bytes per sample, in either byte order.
+    public static func pack(_ samples: [Int32], bits: Int, bigEndian: Bool) -> [UInt8] {
+        var out: [UInt8] = []
+        out.reserveCapacity(samples.count * bits / 8)
+        for q in samples {
+            let u = UInt32(bitPattern: q)
+            if bigEndian {
+                if bits == 24 { out.append(UInt8((u >> 16) & 0xFF)) }
+                out.append(UInt8((u >> 8) & 0xFF))
+                out.append(UInt8(u & 0xFF))
+            } else {
                 out.append(UInt8(u & 0xFF))
                 out.append(UInt8((u >> 8) & 0xFF))
                 if bits == 24 { out.append(UInt8((u >> 16) & 0xFF)) }
@@ -204,10 +220,17 @@ public enum Processing {
         return out
     }
 
-    /// Steps 6 and 7: quantize and write one WAV file.
+    /// Steps 6 and 7: quantize and write one WAV or AIFF file.
     public static func encode(_ a: Audio, _ s: Settings) throws -> [UInt8] {
-        let pcm = try quantize(a, bits: s.bits, dither: s.dither)
-        return Wav.write(sampleRate: a.sampleRate, channelCount: a.channels.count, bits: s.bits, pcm: pcm)
+        let samples = try quantize(a, bits: s.bits, dither: s.dither)
+        switch s.format {
+        case .wav:
+            return Wav.write(sampleRate: a.sampleRate, channelCount: a.channels.count, bits: s.bits,
+                             pcm: pack(samples, bits: s.bits, bigEndian: false))
+        case .aiff:
+            return Aiff.write(sampleRate: a.sampleRate, channelCount: a.channels.count, bits: s.bits,
+                              frames: a.frameCount, pcm: pack(samples, bits: s.bits, bigEndian: true))
+        }
     }
 
     // MARK: Sections 9 and 10

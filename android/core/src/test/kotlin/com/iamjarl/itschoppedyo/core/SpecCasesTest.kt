@@ -1,46 +1,34 @@
 package com.iamjarl.itschoppedyo.core
 
 import com.iamjarl.itschoppedyo.core.ChoppedException.Reason
-import org.json.JSONObject
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 import java.io.File
-import java.security.MessageDigest
 
 /**
- * Runs every case in testdata/cases.json and compares each output's SHA-256 with
- * testdata/expected.json, which tools/reference.py wrote. Outputs land in testdata/out/kotlin/.
+ * Every case in testdata/cases.json on the JVM, with a host build of libsamplerate
+ * (SpecCaseRunner does the work). Outputs land in testdata/out/kotlin/.
+ * DeviceSpecCasesTest runs the same cases on Android's runtime.
  */
 class SpecCasesTest {
     private val testdata = File(System.getProperty("testdata.dir") ?: "../../testdata")
 
     @Test
     fun everyCaseMatchesTheReference() {
-        val cases = JSONObject(File(testdata, "cases.json").readText()).getJSONArray("cases")
-        val expected = JSONObject(File(testdata, "expected.json").readText()).getJSONObject("outputs")
         val outDir = File(testdata, "out/kotlin").apply { mkdirs() }
-
-        assertTrue(cases.length() > 0)
-        val mismatches = mutableListOf<String>()
-        var checked = 0
-        for (i in 0 until cases.length()) {
-            val c = cases.getJSONObject(i)
-            val id = c.getString("id")
-            val outputs = run(c)
-            val want = expected.getJSONObject(id)
-            assertEquals("$id: output file names", keys(want), outputs.keys)
-            for ((name, bytes) in outputs) {
-                File(outDir, name).writeBytes(bytes)
-                if (sha256(bytes) != want.getString(name)) mismatches += "$id: $name"
-                checked++
-            }
-        }
-        assertEquals("files differing from the reference: $mismatches", emptyList<String>(), mismatches)
-        val total = keys(expected).sumOf { expected.getJSONObject(it).length() }
-        assertEquals(total, checked)
+        val r = SpecCaseRunner.runAll(
+            File(testdata, "cases.json").readText(),
+            File(testdata, "expected.json").readText(),
+            readInput = { File(File(testdata, "input"), it).readBytes() },
+            onOutput = { name, bytes -> File(outDir, name).writeBytes(bytes) },
+        )
+        assertTrue(r.checked > 0)
+        assertEquals("output file names", emptyList<String>(), r.nameProblems)
+        assertEquals("files differing from the reference", emptyList<String>(), r.mismatches)
+        assertEquals(r.expectedTotal, r.checked)
     }
 
     @Test
@@ -60,9 +48,16 @@ class SpecCasesTest {
         expect(Reason.BAD_RATIO) { Processing.resample(a, 48000 * 300) }
     }
 
-    // ---- Helpers
-
-    private fun keys(o: JSONObject): Set<String> = o.keys().asSequence().toSet()
+    @Test
+    fun sampleRatesSurviveTheExtendedFloat() {
+        for (r in intArrayOf(1, 8000, 11025, 22050, 44100, 46875, 48000, 96000, 192000, 384000)) {
+            assertEquals(r, Aiff.extendedToRate(Aiff.rateToExtended(r)))
+        }
+        // One lower exponent halves the rate: 88201 / 2 = 44100.5, not a whole number of hertz.
+        val x = Aiff.rateToExtended(88201)
+        x[1] = (x[1] - 1).toByte()
+        expect(Reason.UNSUPPORTED_SAMPLE_RATE) { Aiff.extendedToRate(x) }
+    }
 
     private fun expect(reason: Reason, block: () -> Unit) {
         try {
@@ -70,47 +65,6 @@ class SpecCasesTest {
             fail("expected $reason")
         } catch (e: ChoppedException) {
             assertEquals(reason, e.reason)
-        }
-    }
-
-    private fun sha256(b: ByteArray): String =
-        MessageDigest.getInstance("SHA-256").digest(b).joinToString("") { "%02x".format(it) }
-
-    private fun input(name: String): Audio = Wav.read(File(File(testdata, "input"), name).readBytes())
-
-    private fun fade(o: JSONObject?): Fade? = o?.let {
-        Fade(it.getInt("frames"), if (it.getString("curve") == "linear") FadeCurve.LINEAR else FadeCurve.EQUAL_POWER)
-    }
-
-    private fun settings(d: JSONObject) = Settings(
-        mono = MonoMode.valueOf(d.optString("mono", "keep").uppercase()),
-        trim = d.optJSONArray("trim")?.let { TrimRange(it.getInt(0), it.getInt(1)) },
-        fadeIn = fade(d.optJSONObject("fadeIn")),
-        fadeOut = fade(d.optJSONObject("fadeOut")),
-        sampleRate = if (d.has("sampleRate")) d.getInt("sampleRate") else null,
-        normalizeDb = if (d.has("normalize")) d.getDouble("normalize") else null,
-        bits = d.getInt("bits"),
-        dither = d.optBoolean("dither", false),
-    )
-
-    private fun run(c: JSONObject): Map<String, ByteArray> {
-        val id = c.getString("id")
-        val s = settings(c.getJSONObject("settings"))
-        val inputs = c.getJSONArray("inputs").let { arr -> List(arr.length()) { arr.getString(it) } }
-        return when (c.optString("mode", "single")) {
-            "single" -> mapOf("$id.wav" to Processing.encode(Processing.process(input(inputs[0]), s), s))
-            "slices" -> {
-                val a = Processing.process(input(inputs[0]), s)
-                Processing.slices(a, c.getInt("slices")).mapIndexed { k, p ->
-                    "%s_%02d.wav".format(id, k + 1) to Processing.encode(p, s)
-                }.toMap()
-            }
-            "chain" -> {
-                val items = inputs.map { Processing.process(input(it), s) }
-                val slots = if (c.has("slots")) c.getInt("slots") else null
-                mapOf("$id.wav" to Processing.encode(Processing.chain(items, slots), s))
-            }
-            else -> error("unknown mode in $id")
         }
     }
 }

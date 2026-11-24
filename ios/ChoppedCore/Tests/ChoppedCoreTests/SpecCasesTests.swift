@@ -53,6 +53,16 @@ final class SpecCasesTests: XCTestCase {
         XCTAssertThrowsError(try Processing.resample(a, to: 48000 * 300)) { XCTAssertEqual($0 as? ChoppedError, .badRatio) }
     }
 
+    func testSampleRatesSurviveTheExtendedFloat() throws {
+        for r in [1, 8000, 11025, 22050, 44100, 46875, 48000, 96000, 192000, 384000] {
+            XCTAssertEqual(try Aiff.extendedToRate(Aiff.rateToExtended(r)), r)
+        }
+        // One lower exponent halves the rate: 88201 / 2 = 44100.5, not a whole number of hertz.
+        var x = Aiff.rateToExtended(88201)
+        x[1] = x[1] - 1
+        XCTAssertThrowsError(try Aiff.extendedToRate(x)) { XCTAssertEqual($0 as? ChoppedError, .unsupportedSampleRate) }
+    }
+
     // MARK: Helpers
 
     private func json(_ name: String) throws -> [String: Any] {
@@ -62,7 +72,7 @@ final class SpecCasesTests: XCTestCase {
 
     private func input(_ name: String) throws -> Audio {
         let url = Self.testdata.appendingPathComponent("input").appendingPathComponent(name)
-        return try Wav.read(Array(try Data(contentsOf: url)))
+        return try AudioFile.read(Array(try Data(contentsOf: url)))
     }
 
     private func settings(_ d: [String: Any]) -> Settings {
@@ -75,6 +85,7 @@ final class SpecCasesTests: XCTestCase {
         s.normalizeDB = (d["normalize"] as? NSNumber)?.doubleValue
         s.bits = d["bits"] as! Int
         s.dither = d["dither"] as? Bool ?? false
+        s.format = OutputFormat(rawValue: d["format"] as? String ?? "wav")!
         return s
     }
 
@@ -87,22 +98,23 @@ final class SpecCasesTests: XCTestCase {
         let id = c["id"] as! String
         let s = settings(c["settings"] as! [String: Any])
         let inputs = c["inputs"] as! [String]
+        let ext = AudioFile.fileExtension(s.format)
         switch c["mode"] as? String ?? "single" {
         case "single":
             let a = try Processing.process(try input(inputs[0]), s)
-            return ["\(id).wav": try Processing.encode(a, s)]
+            return ["\(id).\(ext)": try Processing.encode(a, s)]
         case "slices":
             let a = try Processing.process(try input(inputs[0]), s)
             let parts = try Processing.slices(a, count: c["slices"] as! Int)
             var out: [String: [UInt8]] = [:]
             for (k, p) in parts.enumerated() {
-                out[String(format: "%@_%02d.wav", id, k + 1)] = try Processing.encode(p, s)
+                out[String(format: "%@_%02d.%@", id, k + 1, ext)] = try Processing.encode(p, s)
             }
             return out
         case "chain":
             let items = try inputs.map { try Processing.process(try input($0), s) }
             let chained = try Processing.chain(items, slots: c["slots"] as? Int)
-            return ["\(id).wav": try Processing.encode(chained, s)]
+            return ["\(id).\(ext)": try Processing.encode(chained, s)]
         default:
             XCTFail("unknown mode in \(id)")
             return [:]

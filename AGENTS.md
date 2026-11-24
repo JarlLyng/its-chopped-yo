@@ -73,8 +73,10 @@ known and what is unknown.
 
 ## App features (be precise, do not invent features that don't exist)
 
-Built so far (the audio core only, no app UI yet), on both platforms, as in `specs/audio-processing.md` (v0.2):
+Built so far (the audio core only, no app UI yet), on both platforms, as in `specs/audio-processing.md` (v0.3):
 - WAV reading (PCM 8/16/24/32-bit, 32/64-bit float, WAVE_FORMAT_EXTENSIBLE) and writing (PCM 16/24-bit).
+- AIFF reading (8/16/24/32-bit; AIFF-C `NONE`, `sowt`, `fl32`, `fl64`) and writing (plain AIFF,
+  16/24-bit). Sample rates must be whole numbers of hertz.
 - Mono downmix: stereo summed as (L+R)/2, or left or right only; 3 to 6 channels with It's mono's weights.
 - Trim by frame range; fade in and out (linear, or equal power via square root).
 - Resampling with libsamplerate 0.2.2 (`third_party/`, SRC_SINC_BEST_QUALITY), the same C code on both:
@@ -83,8 +85,7 @@ Built so far (the audio core only, no app UI yet), on both platforms, as in `spe
 - Equal slices and sample chains.
 
 ### Features that do NOT exist (common hallucination targets)
-- No AIFF yet. No app UI or test screens yet. The Kotlin core has not run on Android's runtime yet,
-  only on the JVM.
+- No app UI or test screens yet. No AIFF-C output, no compressed AIFF-C input (ima4, ulaw, alaw).
 - No transfer to Digitakt or Digitakt II (they take files only through Elektron Transfer or SDS).
 - No editing of a machine's projects, presets, patterns or p-locks.
 - No effects (EQ, compression, time-stretch, pitch), no sequencer, no pads, no stem separation.
@@ -101,7 +102,8 @@ Built so far (the audio core only, no app UI yet), on both platforms, as in `spe
 - `swift test` (repo root) runs the Swift core against every case.
 - `cd android && ./gradlew :core:testDebugUnitTest` runs the Kotlin core against every case
   (set `JAVA_HOME` to a JDK 17 and `sdk.dir` in `android/local.properties`); `:core:assembleDebug`
-  builds the NDK library.
+  builds the NDK library; `:core:connectedDebugAndroidTest` runs every case on a connected device or
+  emulator (ART and the NDK library), with the test files packed into the test APK's assets.
 - libsamplerate is always compiled with the flags in `third_party/libsamplerate/README.md`
   (`-ffp-contract=off`, never `-ffast-math`), in all four builds.
 - A change to the spec changes `tools/reference.py` and the testdata in the same commit; both

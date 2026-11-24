@@ -1,5 +1,5 @@
 {
-  "specVersion": "0.2",
+  "specVersion": "0.3",
   "outputs": {
     "rightpan_sum_24": {
       "rightpan_sum_24.wav": "1ab83b8b8b2d5e97438ca12e1a7f03c2d7bb78b43c4c53fdcf8397fdd425423c"
@@ -82,6 +82,33 @@
     },
     "chain_mixed_rates_48k": {
       "chain_mixed_rates_48k.wav": "6c772387c10f5dad9d492f4cf00ff9633ee0e06c218800a32df50a205edf1621"
+    },
+    "aiff_16_to_wav_16": {
+      "aiff_16_to_wav_16.wav": "11cc9b8008f20bfb5645b10d40692d16098800ebfc06f60ba828e008fa23cadf"
+    },
+    "aiff_24_44k_odd_to_aiff_24": {
+      "aiff_24_44k_odd_to_aiff_24.aif": "74a7f6533cc2ff328d83efb654f10ee2e8353c2d5cfabc99e6362525f0677797"
+    },
+    "aiff_8_signed_to_16": {
+      "aiff_8_signed_to_16.wav": "2b61612308d175233922df1f1f786473384686a841d13f6c7ff1dea6ee435f59"
+    },
+    "aifc_sowt_sum_to_aiff_16_dither": {
+      "aifc_sowt_sum_to_aiff_16_dither.aif": "33c33e41c0f5b095319d4284416a39b59d89aaa681f54ffaa97614d3cf8e99d1"
+    },
+    "aifc_fl32_normalized_to_aiff_24": {
+      "aifc_fl32_normalized_to_aiff_24.aif": "4e43bf622cf5887fd39cdfe32abffa04b25a5203a677c7ec6c29bd1407f57930"
+    },
+    "aiff_odd_layout_to_wav_16": {
+      "aiff_odd_layout_to_wav_16.wav": "c85f370746313724ab173430256cb9f168051b17920a17e1c0a56205bc9f408c"
+    },
+    "wav_to_aiff_46875_16_dither": {
+      "wav_to_aiff_46875_16_dither.aif": "6652f8c070467295a2f714e0ef89e4fc3d5a804d015c5bb4b156fe3b9427d0d0"
+    },
+    "slices_4_aiff": {
+      "slices_4_aiff_01.aif": "cc44cc1a801508fa198521ef17325c41b4196cba7d585a7e6ca6c6a840d7c287",
+      "slices_4_aiff_02.aif": "b08f1e7aa449fe2233770696e1921547c04f15230d39c70d6b82d6d8f93d9eaa",
+      "slices_4_aiff_03.aif": "cc44cc1a801508fa198521ef17325c41b4196cba7d585a7e6ca6c6a840d7c287",
+      "slices_4_aiff_04.aif": "b08f1e7aa449fe2233770696e1921547c04f15230d39c70d6b82d6d8f93d9eaa"
     },
     "chain_3_slots_4": {
       "chain_3_slots_4.wav": "8c67e84916cc7b68fe28b0c71eba98621ac469eaea1644310b270fb276e1f456"

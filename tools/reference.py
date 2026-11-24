@@ -1,4 +1,4 @@
-"""Reference implementation of specs/audio-processing.md, version 0.2.
+"""Reference implementation of specs/audio-processing.md, version 0.3.
 
 Standard library only. This is the spec written as code: the Swift and Kotlin cores must produce
 the same bytes as this file. Keep it plain and close to the spec text, not fast.
@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 import native  # tools/native.py: libsamplerate built for this machine
 
-SPEC_VERSION = "0.2"
+SPEC_VERSION = "0.3"
 
 # Section 6: normalize targets, dBFS -> nearest double to 10^(dB/20). Never computed with pow.
 NORMALIZE_TARGETS = {
@@ -105,6 +105,83 @@ def _decode(data: bytes, start: int, size: int, fmt) -> Audio:
         raise SpecError("unsupported format")
     for i in range(frames):
         base = start + i * block
+        for c in range(ch):
+            out[c][i] = conv(base + c * width)
+    return Audio(rate, out)
+
+
+def read_audio(data: bytes) -> Audio:
+    """Section 1, step 1: the first four bytes decide."""
+    if data[0:4] == b"FORM":
+        return read_aiff(data)
+    return read_wav(data)
+
+
+# --- Section 2a: reading AIFF -------------------------------------------------------------------
+
+def extended_to_rate(b: bytes) -> int:
+    e = (b[0] << 8) | b[1]
+    m = int.from_bytes(b[2:10], "big")
+    shift = 16383 + 63 - (e & 0x7FFF)
+    if e & 0x8000 or not (0 <= shift < 64) or (m & ((1 << shift) - 1)) != 0:
+        raise SpecError("unsupported sample rate")
+    return m >> shift
+
+
+def read_aiff(data: bytes) -> Audio:
+    if len(data) < 12 or data[0:4] != b"FORM" or data[8:12] not in (b"AIFF", b"AIFC"):
+        raise SpecError("not an AIFF file")
+    aifc = data[8:12] == b"AIFC"
+    pos = 12
+    comm = None
+    ssnd = None
+    while pos + 8 <= len(data):
+        cid = data[pos:pos + 4]
+        size = struct.unpack_from(">I", data, pos + 4)[0]
+        body = pos + 8
+        if cid == b"COMM":
+            ch, frames, bits = struct.unpack_from(">HIH", data, body)
+            rate = extended_to_rate(data[body + 8:body + 18])
+            comp = data[body + 18:body + 22] if aifc else b"NONE"
+            comm = (ch, frames, bits, rate, comp)
+        elif cid == b"SSND":
+            offset = struct.unpack_from(">I", data, body)[0]
+            start = body + 8 + offset
+            available = min(size - 8 - offset, len(data) - start)
+            ssnd = (start, max(available, 0))
+        pos = body + size + (size & 1)
+    if comm is None or ssnd is None:
+        raise SpecError("no COMM or SSND chunk")
+    ch, frames, bits, rate, comp = comm
+    if ch < 1:
+        raise SpecError("bad fmt")
+    start, available = ssnd
+    width = bits // 8
+    if comp == b"NONE" and bits == 8:
+        conv = lambda o: struct.unpack_from(">b", data, o)[0] / 128.0
+    elif comp == b"NONE" and bits == 16:
+        conv = lambda o: struct.unpack_from(">h", data, o)[0] / 32768.0
+    elif comp == b"NONE" and bits == 24:
+        def conv(o):
+            v = (data[o] << 16) | (data[o + 1] << 8) | data[o + 2]
+            if v >= 0x800000:
+                v -= 0x1000000
+            return v / 8388608.0
+    elif comp == b"NONE" and bits == 32:
+        conv = lambda o: struct.unpack_from(">i", data, o)[0] / 2147483648.0
+    elif comp == b"sowt" and bits == 16:
+        conv = lambda o: struct.unpack_from("<h", data, o)[0] / 32768.0
+    elif comp in (b"fl32", b"FL32") and bits == 32:
+        conv = lambda o: struct.unpack_from(">f", data, o)[0]
+    elif comp in (b"fl64", b"FL64") and bits == 64:
+        conv = lambda o: struct.unpack_from(">d", data, o)[0]
+    else:
+        raise SpecError("unsupported format")
+    frame_bytes = ch * width
+    n = min(frames, available // frame_bytes)
+    out = [[0.0] * n for _ in range(ch)]
+    for i in range(n):
+        base = start + i * frame_bytes
         for c in range(ch):
             out[c][i] = conv(base + c * width)
     return Audio(rate, out)
@@ -234,14 +311,15 @@ class XorShift32:
         return (s >> 8) / 16777216.0
 
 
-def quantize(a: Audio, bits: int, dither: bool) -> bytes:
+def quantize(a: Audio, bits: int, dither: bool) -> list[int]:
+    """Section 7: interleaved integers in file order."""
     if bits not in (16, 24):
         raise SpecError("bits must be 16 or 24")
     scale = float(1 << (bits - 1))
     hi = (1 << (bits - 1)) - 1
     lo = -(1 << (bits - 1))
     rng = XorShift32()
-    out = bytearray()
+    out = []
     nch = len(a.channels)
     for i in range(a.frames):
         for c in range(nch):
@@ -251,13 +329,15 @@ def quantize(a: Audio, bits: int, dither: bool) -> bytes:
                 r2 = rng.next()
                 v = v + (r1 + r2 - 1.0)
             q = math.floor(v + 0.5)
-            q = hi if q > hi else lo if q < lo else q
-            if bits == 16:
-                out += struct.pack("<h", q)
-            else:
-                u = q & 0xFFFFFF
-                out += bytes((u & 0xFF, (u >> 8) & 0xFF, (u >> 16) & 0xFF))
-    return bytes(out)
+            out.append(hi if q > hi else lo if q < lo else q)
+    return out
+
+
+def pack(samples: list[int], bits: int, big_endian: bool) -> bytes:
+    width = bits // 8
+    order = "big" if big_endian else "little"
+    mask = (1 << bits) - 1
+    return b"".join((q & mask).to_bytes(width, order) for q in samples)
 
 
 def write_wav(rate: int, nch: int, bits: int, pcm: bytes) -> bytes:
@@ -270,9 +350,34 @@ def write_wav(rate: int, nch: int, bits: int, pcm: bytes) -> bytes:
     return header + pcm + (b"\x00" if pad else b"")
 
 
+def rate_to_extended(r: int) -> bytes:
+    """Section 8a: a positive integer rate as an 80-bit extended float, without floating point."""
+    if r <= 0:
+        raise SpecError("unsupported sample rate")
+    p = r.bit_length() - 1
+    return (16383 + p).to_bytes(2, "big") + (r << (63 - p)).to_bytes(8, "big")
+
+
+def write_aiff(rate: int, nch: int, bits: int, frames: int, pcm: bytes) -> bytes:
+    data_size = len(pcm)
+    pad = data_size & 1
+    out = b"FORM" + struct.pack(">I", 4 + 26 + 16 + data_size + pad) + b"AIFF"
+    out += b"COMM" + struct.pack(">IHIH", 18, nch, frames, bits) + rate_to_extended(rate)
+    out += b"SSND" + struct.pack(">III", 8 + data_size, 0, 0)
+    return out + pcm + (b"\x00" if pad else b"")
+
+
 def encode(a: Audio, s: dict) -> bytes:
-    return write_wav(a.rate, len(a.channels), s["bits"],
-                     quantize(a, s["bits"], s.get("dither", False)))
+    """Steps 6 and 7."""
+    bits = s["bits"]
+    samples = quantize(a, bits, s.get("dither", False))
+    if s.get("format", "wav") == "aiff":
+        return write_aiff(a.rate, len(a.channels), bits, a.frames, pack(samples, bits, True))
+    return write_wav(a.rate, len(a.channels), bits, pack(samples, bits, False))
+
+
+def extension(s: dict) -> str:
+    return ".aif" if s.get("format", "wav") == "aiff" else ".wav"
 
 
 # --- Sections 9 and 10, and a whole test case ---------------------------------------------------
@@ -306,19 +411,20 @@ def run_case(case: dict, read_input) -> dict[str, bytes]:
     """Returns {output file name: bytes}. read_input(name) returns the input file's bytes."""
     s = case["settings"]
     cid = case["id"]
+    ext = extension(s)
     mode = case.get("mode", "single")
     if mode == "single":
-        a = process(read_wav(read_input(case["inputs"][0])), s)
-        return {f"{cid}.wav": encode(a, s)}
+        a = process(read_audio(read_input(case["inputs"][0])), s)
+        return {f"{cid}{ext}": encode(a, s)}
     if mode == "slices":
-        a = process(read_wav(read_input(case["inputs"][0])), s)
+        a = process(read_audio(read_input(case["inputs"][0])), s)
         b = slice_bounds(a.frames, case["slices"])
         out = {}
         for k in range(case["slices"]):
             part = Audio(a.rate, [ch[b[k]:b[k + 1]] for ch in a.channels])
-            out[f"{cid}_{k + 1:02d}.wav"] = encode(part, s)
+            out[f"{cid}_{k + 1:02d}{ext}"] = encode(part, s)
         return out
     if mode == "chain":
-        items = [process(read_wav(read_input(n)), s) for n in case["inputs"]]
-        return {f"{cid}.wav": encode(chain(items, case.get("slots")), s)}
+        items = [process(read_audio(read_input(n)), s) for n in case["inputs"]]
+        return {f"{cid}{ext}": encode(chain(items, case.get("slots")), s)}
     raise SpecError("unknown mode")

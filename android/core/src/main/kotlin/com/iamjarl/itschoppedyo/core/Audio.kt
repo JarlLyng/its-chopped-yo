@@ -1,4 +1,4 @@
-// specs/audio-processing.md, version 0.2. Read the spec before changing anything here: the same
+// specs/audio-processing.md, version 0.3. Read the spec before changing anything here: the same
 // bytes on Android and iOS depend on doing exactly what it says, in the order it says.
 package com.iamjarl.itschoppedyo.core
 
@@ -9,7 +9,7 @@ class Audio(val sampleRate: Int, val channels: List<DoubleArray>) {
 
 class ChoppedException(val reason: Reason) : Exception(reason.name) {
     enum class Reason {
-        NOT_WAVE, DATA_BEFORE_FMT, NO_DATA, BAD_FORMAT, UNSUPPORTED_FORMAT, EMPTY_AFTER_TRIM,
+        NOT_WAVE, NOT_AIFF, UNSUPPORTED_SAMPLE_RATE, DATA_BEFORE_FMT, NO_DATA, BAD_FORMAT, UNSUPPORTED_FORMAT, EMPTY_AFTER_TRIM,
         UNKNOWN_NORMALIZE_TARGET, BAD_RATIO, RESAMPLE_FAILED, BAD_BITS, BAD_SLICE_COUNT, FEWER_FRAMES_THAN_SLICES,
         CHAIN_MISMATCH, FEWER_SLOTS_THAN_INPUTS,
     }
@@ -18,6 +18,8 @@ class ChoppedException(val reason: Reason) : Exception(reason.name) {
 internal fun fail(reason: ChoppedException.Reason): Nothing = throw ChoppedException(reason)
 
 enum class MonoMode { KEEP, SUM, LEFT, RIGHT }
+
+enum class OutputFormat { WAV, AIFF }
 
 enum class FadeCurve { LINEAR, EQUAL_POWER }
 
@@ -38,4 +40,5 @@ data class Settings(
     val normalizeDb: Double? = null,
     val bits: Int = 16,
     val dither: Boolean = false,
+    val format: OutputFormat = OutputFormat.WAV,
 )

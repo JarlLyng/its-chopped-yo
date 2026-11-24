@@ -1,6 +1,6 @@
 # Audio processing spec
 
-**Version 0.2 (2026-11-25).** Version 0.2 adds resampling (section 5a). The source of truth for the audio core on both platforms. The Swift
+**Version 0.3 (2026-11-25).** Version 0.2 added resampling (section 5a); 0.3 adds AIFF in and out (sections 2a and 8a). The source of truth for the audio core on both platforms. The Swift
 core (`ios/ChoppedCore`), the Kotlin core (`android/core`) and the reference implementation
 (`tools/reference.py`) follow this text. When the text and a core disagree, the core is wrong.
 
@@ -22,14 +22,14 @@ both apps write identical files. The test files in `testdata/` check that.
 
 For one output file:
 
-1. Read the input (section 2).
+1. Read the input (section 2 for WAV, 2a for AIFF; the first four bytes decide: `RIFF` or `FORM`).
 2. Channels (section 3).
 3. Trim (section 4).
 4. Fade in, then fade out (section 5).
 4a. Resample (section 5a).
 5. Normalize (section 6).
 6. Quantize to integers, with or without dither (section 7).
-7. Write WAV (section 8).
+7. Write WAV (section 8) or AIFF (section 8a).
 
 Slices and chains (sections 9 and 10) split or join after step 5 and quantize each output file on
 its own. Trim and fade lengths are in frames of the input's sample rate, since they come before the
@@ -46,6 +46,7 @@ The settings for one run:
 | `normalize` | none, or a target in dBFS from the table in section 6 |
 | `bits` | `16` or `24` |
 | `dither` | `true` or `false` |
+| `format` | `wav` (the default) or `aiff`; output files end in `.wav` or `.aif` |
 
 ## 2. Reading WAV
 
@@ -72,6 +73,40 @@ Supported:
 Anything else is an error ("unsupported format"). The `data` chunk holds interleaved frames.
 `frames = floor(dataSize / blockAlign)`. If `dataSize` is larger than the bytes left in the file,
 the bytes left are used. A file without `fmt ` before `data`, or without `data`, is an error.
+
+## 2a. Reading AIFF
+
+The file is an IFF chunk: `FORM`, a 4-byte **big-endian** unsigned size, and form type `AIFF` or
+`AIFC`. Chunks follow with a 4-byte id, a big-endian u32 size, the data, and one pad byte when the
+size is odd. Unknown chunks are skipped, pad byte included. Every number in AIFF is big-endian.
+
+The `COMM` chunk gives `channels` (u16), `numSampleFrames` (u32), `sampleSize` (u16, bits) and
+`sampleRate` as an 80-bit IEEE extended float. In `AIFC` files a 4-byte `compressionType` follows.
+
+**The sample rate** is read without floating point. The 10 bytes are a 16-bit sign-and-exponent `e`
+and a 64-bit mantissa `m`. With `shift = 16383 + 63 - (e & 0x7FFF)`, the rate is `m >> shift` when
+`0 <= shift < 64`, the sign bit is clear, and the bits shifted out are all zero. Anything else is an
+error ("unsupported sample rate"): the rate must be a whole number of hertz.
+
+Supported:
+
+| Form | compressionType | Bits | Sample type | To double |
+|---|---|---|---|---|
+| AIFF, or AIFC `NONE` | | 8 | signed | `s / 128.0` |
+| AIFF, or AIFC `NONE` | | 16 | signed, big-endian | `s / 32768.0` |
+| AIFF, or AIFC `NONE` | | 24 | signed, big-endian, 3 bytes | `s / 8388608.0` |
+| AIFF, or AIFC `NONE` | | 32 | signed, big-endian | `s / 2147483648.0` |
+| AIFC | `sowt` | 16 | signed, **little-endian** | `s / 32768.0` |
+| AIFC | `fl32` or `FL32` | 32 | IEEE float, big-endian | widened to double |
+| AIFC | `fl64` or `FL64` | 64 | IEEE double, big-endian | as is |
+
+Anything else is an error ("unsupported format"). Note that 8-bit AIFF is signed, unlike 8-bit WAV.
+
+The `SSND` chunk starts with `offset` (u32) and `blockSize` (u32); the sample data begins `8 +
+offset` bytes into the chunk. Frames are interleaved, `channels * sampleSize / 8` bytes each.
+`frames = min(numSampleFrames, floor(bytesAvailable / frameBytes))`, where `bytesAvailable` is the
+chunk's size minus `8 + offset`, cut to the bytes left in the file. `COMM` may come before or after
+`SSND`; a file without both is an error.
 
 ## 3. Channels
 
@@ -208,12 +243,41 @@ PCM only, 44-byte header, little-endian:
 
 `pad` is 1 when `dataSize` is odd, and that one byte, `0x00`, follows the samples. No other chunks.
 
+## 8a. Writing AIFF
+
+Plain AIFF (form type `AIFF`, no compression), big-endian:
+
+| Offset | Bytes | Value |
+|---|---|---|
+| 0 | 4 | `FORM` |
+| 4 | 4 | `4 + 26 + 16 + dataSize + pad` |
+| 8 | 4 | `AIFF` |
+| 12 | 4 | `COMM` |
+| 16 | 4 | 18 |
+| 20 | 2 | channels |
+| 22 | 4 | frames |
+| 26 | 2 | B |
+| 28 | 10 | sample rate, 80-bit extended (below) |
+| 38 | 4 | `SSND` |
+| 42 | 4 | `8 + dataSize` |
+| 46 | 4 | 0 (offset) |
+| 50 | 4 | 0 (blockSize) |
+| 54 | | interleaved samples, big-endian two's complement, 2 or 3 bytes each |
+
+`dataSize = frames * channels * B / 8`; `pad` is 1 when `dataSize` is odd, and that byte, `0x00`,
+follows the samples. No other chunks.
+
+The sample rate `r` (a positive integer) is written without floating point: with `p` the index of
+its highest set bit (0 for 1), the exponent is `16383 + p` as a big-endian u16 (sign bit clear) and
+the mantissa is `r << (63 - p)` as a big-endian u64.
+
 ## 9. Equal slices
 
 After step 5, a buffer of `L` frames is cut into `N` slices (2 to 64). `L < N` is an error. With
 64-bit integers, `b[k] = floor(k * L / N)` for `k = 0 ... N`; slice `k` is frames
 `[b[k], b[k+1])`. Fades and normalize apply to the whole buffer before it is cut, not to each slice.
-Each slice is quantized and written as its own file, `<name>_01.wav` to `<name>_NN.wav` (two digits),
+Each slice is quantized and written as its own file, `<name>_01.wav` to `<name>_NN.wav` (two digits,
+`.aif` for AIFF),
 with the generator restarted for each.
 
 ## 10. Sample chains
