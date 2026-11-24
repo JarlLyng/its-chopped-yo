@@ -1,4 +1,4 @@
-// specs/audio-processing.md, version 0.1. Read the spec before changing anything here: the same
+// specs/audio-processing.md, version 0.2. Read the spec before changing anything here: the same
 // bytes on Android and iOS depend on doing exactly what it says, in the order it says.
 package com.iamjarl.itschoppedyo.core
 
@@ -10,7 +10,7 @@ class Audio(val sampleRate: Int, val channels: List<DoubleArray>) {
 class ChoppedException(val reason: Reason) : Exception(reason.name) {
     enum class Reason {
         NOT_WAVE, DATA_BEFORE_FMT, NO_DATA, BAD_FORMAT, UNSUPPORTED_FORMAT, EMPTY_AFTER_TRIM,
-        UNKNOWN_NORMALIZE_TARGET, BAD_BITS, BAD_SLICE_COUNT, FEWER_FRAMES_THAN_SLICES,
+        UNKNOWN_NORMALIZE_TARGET, BAD_RATIO, RESAMPLE_FAILED, BAD_BITS, BAD_SLICE_COUNT, FEWER_FRAMES_THAN_SLICES,
         CHAIN_MISMATCH, FEWER_SLOTS_THAN_INPUTS,
     }
 }
@@ -32,6 +32,8 @@ data class Settings(
     val trim: TrimRange? = null,
     val fadeIn: Fade? = null,
     val fadeOut: Fade? = null,
+    /** The output sample rate in Hz, or null to keep the input's (section 5a). */
+    val sampleRate: Int? = null,
     /** A dBFS value from [Processing.normalizeTargets], or null for no normalize. */
     val normalizeDb: Double? = null,
     val bits: Int = 16,

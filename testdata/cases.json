@@ -1,5 +1,5 @@
 {
-  "specVersion": "0.1",
+  "specVersion": "0.2",
   "cases": [
     {
       "id": "rightpan_sum_24",
@@ -223,6 +223,115 @@
         "bits": 16,
         "dither": true,
         "normalize": -0.3
+      }
+    },
+    {
+      "id": "resample_44k_to_48k_16_dither",
+      "inputs": [
+        "sine_m16_44k.wav"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 16,
+        "dither": true,
+        "sampleRate": 48000
+      }
+    },
+    {
+      "id": "resample_to_46875_sum_16",
+      "inputs": [
+        "sine_st24.wav"
+      ],
+      "settings": {
+        "mono": "sum",
+        "bits": 16,
+        "dither": false,
+        "sampleRate": 46875
+      }
+    },
+    {
+      "id": "resample_96k_stereo_to_48k_24",
+      "inputs": [
+        "sine_st24_96k.wav"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 24,
+        "dither": false,
+        "sampleRate": 48000
+      }
+    },
+    {
+      "id": "resample_u8_22k_to_48k_16",
+      "inputs": [
+        "u8_m.wav"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 16,
+        "dither": false,
+        "sampleRate": 48000
+      }
+    },
+    {
+      "id": "resample_down_to_22050_24",
+      "inputs": [
+        "noise_right_st24.wav"
+      ],
+      "settings": {
+        "mono": "sum",
+        "bits": 24,
+        "dither": false,
+        "sampleRate": 22050
+      }
+    },
+    {
+      "id": "resample_six_ch_to_44k_24",
+      "inputs": [
+        "six_ch_24.wav"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 24,
+        "dither": false,
+        "sampleRate": 44100
+      }
+    },
+    {
+      "id": "resample_after_fade_normalized_16",
+      "inputs": [
+        "sine_m16.wav"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 16,
+        "dither": true,
+        "trim": [
+          0,
+          12000
+        ],
+        "fadeOut": {
+          "frames": 2400,
+          "curve": "equalPower"
+        },
+        "sampleRate": 32000,
+        "normalize": -0.1
+      }
+    },
+    {
+      "id": "chain_mixed_rates_48k",
+      "mode": "chain",
+      "inputs": [
+        "sine_m16_44k.wav",
+        "sine_m16.wav",
+        "u8_m.wav"
+      ],
+      "settings": {
+        "mono": "sum",
+        "bits": 16,
+        "dither": true,
+        "normalize": -0.3,
+        "sampleRate": 48000
       }
     },
     {

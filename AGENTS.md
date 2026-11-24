@@ -73,15 +73,18 @@ known and what is unknown.
 
 ## App features (be precise, do not invent features that don't exist)
 
-Built so far (the audio core only, no app UI yet), on both platforms, as in `specs/audio-processing.md`:
+Built so far (the audio core only, no app UI yet), on both platforms, as in `specs/audio-processing.md` (v0.2):
 - WAV reading (PCM 8/16/24/32-bit, 32/64-bit float, WAVE_FORMAT_EXTENSIBLE) and writing (PCM 16/24-bit).
 - Mono downmix: stereo summed as (L+R)/2, or left or right only; 3 to 6 channels with It's mono's weights.
 - Trim by frame range; fade in and out (linear, or equal power via square root).
+- Resampling with libsamplerate 0.2.2 (`third_party/`, SRC_SINC_BEST_QUALITY), the same C code on both:
+  SwiftPM on iOS, NDK plus JNI on Android, a host build for the JVM tests.
 - Peak normalize to a fixed list of targets; quantize with optional TPDF dither from a seeded xorshift32.
 - Equal slices and sample chains.
 
 ### Features that do NOT exist (common hallucination targets)
-- No resampling yet (planned with libsamplerate on both platforms). No AIFF yet.
+- No AIFF yet. No app UI or test screens yet. The Kotlin core has not run on Android's runtime yet,
+  only on the JVM.
 - No transfer to Digitakt or Digitakt II (they take files only through Elektron Transfer or SDS).
 - No editing of a machine's projects, presets, patterns or p-locks.
 - No effects (EQ, compression, time-stretch, pitch), no sequencer, no pads, no stem separation.
@@ -95,16 +98,19 @@ Built so far (the audio core only, no app UI yet), on both platforms, as in `spe
 
 ## Build & run
 - `python3 tools/make_testdata.py` regenerates `testdata/` from the reference implementation.
-- `cd ios/ChoppedCore && swift test` runs the Swift core against every case.
+- `swift test` (repo root) runs the Swift core against every case.
 - `cd android && ./gradlew :core:testDebugUnitTest` runs the Kotlin core against every case
-  (set `JAVA_HOME` to a JDK 17 and `sdk.dir` in `android/local.properties`).
+  (set `JAVA_HOME` to a JDK 17 and `sdk.dir` in `android/local.properties`); `:core:assembleDebug`
+  builds the NDK library.
+- libsamplerate is always compiled with the flags in `third_party/libsamplerate/README.md`
+  (`-ffp-contract=off`, never `-ffast-math`), in all four builds.
 - A change to the spec changes `tools/reference.py` and the testdata in the same commit; both
   cores must then pass unchanged expectations.
 
 ## Conventions
 - **Same bytes on both platforms.** All processing in 64-bit float, only `+ - * /`, `floor` and
-  `sqrt` (all exactly rounded under IEEE 754). No `sin`, `pow` or `log` in the audio path: libm
-  results differ between platforms.
+  `sqrt` (all exactly rounded under IEEE 754), plus libsamplerate. No `sin`, `pow` or `log` in the
+  audio path: libm results differ between platforms.
 - Uses `iamjarl-design` tokens once there is UI, with no hardcoded colors, spacing, radius or type.
 - Privacy-first: telemetry only if anonymous, and disclosed, following the hub's five rules and
   recipe (`PROJECT_STANDARDS.md`, "Privacy-first"). Not decided for this app yet.

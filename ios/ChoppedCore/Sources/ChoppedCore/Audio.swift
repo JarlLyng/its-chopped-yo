@@ -1,4 +1,4 @@
-// specs/audio-processing.md, version 0.1. Read the spec before changing anything here: the same
+// specs/audio-processing.md, version 0.2. Read the spec before changing anything here: the same
 // bytes on iOS and Android depend on doing exactly what it says, in the order it says.
 
 /// Audio as 64-bit floats, one array per channel (`channels[ch][frame]`).
@@ -24,6 +24,8 @@ public enum ChoppedError: Error, Equatable {
     case emptyAfterTrim
     case unknownCurve
     case unknownNormalizeTarget
+    case badRatio
+    case resampleFailed
     case badBits
     case badSliceCount
     case fewerFramesThanSlices
@@ -56,6 +58,8 @@ public struct Settings: Equatable {
     public var trim: (start: Int, end: Int)?
     public var fadeIn: Fade?
     public var fadeOut: Fade?
+    /// The output sample rate in Hz, or nil to keep the input's (section 5a).
+    public var sampleRate: Int?
     /// A dBFS value from `Normalize.targets`, or nil for no normalize.
     public var normalizeDB: Double?
     public var bits: Int = 16
@@ -65,7 +69,8 @@ public struct Settings: Equatable {
 
     public static func == (a: Settings, b: Settings) -> Bool {
         a.mono == b.mono && a.trim?.start == b.trim?.start && a.trim?.end == b.trim?.end
-            && a.fadeIn == b.fadeIn && a.fadeOut == b.fadeOut && a.normalizeDB == b.normalizeDB
+            && a.fadeIn == b.fadeIn && a.fadeOut == b.fadeOut && a.sampleRate == b.sampleRate
+            && a.normalizeDB == b.normalizeDB
             && a.bits == b.bits && a.dither == b.dither
     }
 }

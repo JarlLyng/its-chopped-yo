@@ -7,7 +7,8 @@ are part of the plan too.
 
 It's built for iPhone and Android as two native apps, SwiftUI on iOS and Kotlin with Jetpack Compose
 on Android. Both follow one written spec for the audio processing and run the same test files, so a
-file prepared on either phone comes out byte for byte the same.
+file prepared on either phone comes out byte for byte the same. Resampling uses
+[libsamplerate](https://github.com/libsndfile/libsamplerate), compiled from the same source on both.
 
 Everything happens on the phone. No account, no cloud, no ads and no tracking. It will be a one-time
 purchase, no subscription.
@@ -21,8 +22,9 @@ purchase, no subscription.
 | `specs/` | The audio processing spec, the source of truth for both apps |
 | `testdata/` | Generated input files, expected output files and their checksums |
 | `tools/` | The generator and the reference implementation of the spec (Python, standard library only) |
-| `ios/` | The Swift side: `ChoppedCore`, a Swift package with the audio core and its tests |
-| `android/` | The Kotlin side: the `core` module with the audio core and its tests |
+| `ios/` | The Swift side: the `ChoppedCore` sources and tests (the package is `Package.swift` at the root) |
+| `android/` | The Kotlin side: the `core` module with the audio core, its JNI bridge and its tests |
+| `third_party/` | libsamplerate 0.2.2 (BSD-2-Clause), the resampler both platforms compile from the same source |
 
 ## Run the tests
 
@@ -32,10 +34,10 @@ Regenerate the test files (only needed when the spec changes):
 python3 tools/make_testdata.py
 ```
 
-The Swift core, on the Mac:
+The Swift core, on the Mac, from the repo root:
 
 ```bash
-cd ios/ChoppedCore && swift test
+swift test
 ```
 
 The Kotlin core, on the Mac (JDK 17 and the Android SDK):
@@ -45,7 +47,8 @@ cd android && ./gradlew :core:testDebugUnitTest
 ```
 
 Both test suites read `testdata/cases.json`, run every case and compare the SHA-256 of each output
-file with `testdata/expected.json`.
+file with `testdata/expected.json`. CI runs both, and rebuilds the expected files on Linux to check
+that they come out the same on another CPU architecture.
 
 ## Related apps
 

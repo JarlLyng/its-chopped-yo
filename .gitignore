@@ -15,6 +15,7 @@ xcuserdata/
 # Android / Gradle
 .gradle/
 .kotlin/
+.cxx/
 build/
 local.properties
 *.keystore
@@ -40,3 +41,6 @@ CLAUDE.local.md
 .mcp.json
 GEMINI.md
 .github/copilot-instructions.md
+
+# The host build of libsamplerate for the Python reference
+tools/build/

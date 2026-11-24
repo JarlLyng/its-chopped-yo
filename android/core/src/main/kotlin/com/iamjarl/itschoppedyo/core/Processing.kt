@@ -1,4 +1,5 @@
-// Spec sections 3 to 7, 9 and 10. Only + - * /, floor, sqrt and abs touch the audio.
+// Spec sections 3 to 7, 9 and 10. Only + - * /, floor, sqrt and abs touch the audio, apart from
+// libsamplerate in section 5a, which is the same C code on both platforms.
 package com.iamjarl.itschoppedyo.core
 
 import com.iamjarl.itschoppedyo.core.ChoppedException.Reason
@@ -34,6 +35,7 @@ object Processing {
         var a = applyChannels(input, s.mono)
         a = trim(a, s.trim)
         a = fade(a, s.fadeIn, s.fadeOut)
+        a = resample(a, s.sampleRate)
         a = normalize(a, s.normalizeDb)
         return a
     }
@@ -98,6 +100,24 @@ object Processing {
             }
         }
         return Audio(a.sampleRate, chans)
+    }
+
+    // ---- Section 5a
+
+    /** libsamplerate's `src_simple` with SRC_SINC_BEST_QUALITY, through interleaved 32-bit floats. */
+    fun resample(a: Audio, rate: Int?): Audio {
+        if (rate == null || rate == a.sampleRate) return a
+        val ratio = rate.toDouble() / a.sampleRate.toDouble()
+        if (ratio < 1.0 / 256.0 || ratio > 256.0) fail(Reason.BAD_RATIO)
+        val nch = a.channels.size
+        val frames = a.frameCount
+        val input = FloatArray(frames * nch)
+        for (i in 0 until frames) for (c in 0 until nch) input[i * nch + c] = a.channels[c][i].toFloat()
+        val capacity = floor(frames.toDouble() * ratio).toInt() + 256
+        val out = NativeResampler.simple(input, frames, nch, ratio, capacity) ?: fail(Reason.RESAMPLE_FAILED)
+        val generated = out.size / nch
+        val chans = List(nch) { c -> DoubleArray(generated) { i -> out[i * nch + c].toDouble() } }
+        return Audio(rate, chans)
     }
 
     // ---- Section 6

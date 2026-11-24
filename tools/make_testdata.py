@@ -46,7 +46,12 @@ def _pcm(samples_by_ch, bits, tag):
     return bytes(out)
 
 
+FORCE_INPUTS = "--inputs" in sys.argv
+
+
 def write_input(name, rate, samples_by_ch, bits, tag=1, extensible=False, extra_chunk=None):
+    if (INPUT / name).exists() and not FORCE_INPUTS:
+        return  # committed inputs stay as they are; see the module docstring
     nch = len(samples_by_ch)
     block = nch * bits // 8
     data = _pcm(samples_by_ch, bits, tag)
@@ -94,6 +99,9 @@ def make_inputs():
     write_input("sine_m16_44k.wav", 44100, [sine(1000, 0.7, 4410, 44100)], 16)
     write_input("chunks_m16.wav", r, [sine(880, 0.5, 2400, r)], 16,
                 extra_chunk=(b"LIST", b"INFOISFT\x05\x00\x00\x00test\x00"))
+    # Version 0.2: a 96 kHz stereo file for resampling down.
+    write_input("sine_st24_96k.wav", 96000,
+                [sine(1000, 0.8, 9600, 96000), sine(15000, 0.5, 9600, 96000)], 24)
 
 
 def cases():
@@ -137,6 +145,27 @@ def cases():
         {"id": "chain_3", "mode": "chain",
          "inputs": ["sine_m16.wav", "odd_m24.wav", "quiet_m24.wav"],
          "settings": {"mono": "sum", "bits": 16, "dither": True, "normalize": -0.3}},
+        # Version 0.2: resampling.
+        {"id": "resample_44k_to_48k_16_dither", "inputs": ["sine_m16_44k.wav"],
+         "settings": {"mono": "keep", "bits": 16, "dither": True, "sampleRate": 48000}},
+        {"id": "resample_to_46875_sum_16", "inputs": ["sine_st24.wav"],
+         "settings": {"mono": "sum", "bits": 16, "dither": False, "sampleRate": 46875}},
+        {"id": "resample_96k_stereo_to_48k_24", "inputs": ["sine_st24_96k.wav"],
+         "settings": {"mono": "keep", "bits": 24, "dither": False, "sampleRate": 48000}},
+        {"id": "resample_u8_22k_to_48k_16", "inputs": ["u8_m.wav"],
+         "settings": {**base16, "sampleRate": 48000}},
+        {"id": "resample_down_to_22050_24", "inputs": ["noise_right_st24.wav"],
+         "settings": {"mono": "sum", "bits": 24, "dither": False, "sampleRate": 22050}},
+        {"id": "resample_six_ch_to_44k_24", "inputs": ["six_ch_24.wav"],
+         "settings": {"mono": "keep", "bits": 24, "dither": False, "sampleRate": 44100}},
+        {"id": "resample_after_fade_normalized_16", "inputs": ["sine_m16.wav"],
+         "settings": {"mono": "keep", "bits": 16, "dither": True, "trim": [0, 12000],
+                      "fadeOut": {"frames": 2400, "curve": "equalPower"},
+                      "sampleRate": 32000, "normalize": -0.1}},
+        {"id": "chain_mixed_rates_48k", "mode": "chain",
+         "inputs": ["sine_m16_44k.wav", "sine_m16.wav", "u8_m.wav"],
+         "settings": {"mono": "sum", "bits": 16, "dither": True, "normalize": -0.3,
+                      "sampleRate": 48000}},
         {"id": "chain_3_slots_4", "mode": "chain", "slots": 4,
          "inputs": ["sine_m16.wav", "odd_m24.wav", "quiet_m24.wav"],
          "settings": {"mono": "sum", "bits": 24, "dither": False}},
@@ -144,8 +173,7 @@ def cases():
 
 
 def main():
-    if "--inputs" in sys.argv or not INPUT.exists():
-        make_inputs()
+    make_inputs()
     all_cases = cases()
     (ROOT / "cases.json").write_text(
         json.dumps({"specVersion": ref.SPEC_VERSION, "cases": all_cases}, indent=2) + "\n")

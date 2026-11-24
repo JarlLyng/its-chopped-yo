@@ -1,0 +1,35 @@
+# Dependabot version updates for It's chopped, yo!
+#
+# Every entry waits 7 days before proposing a new version (`cooldown`, as in every IAMJARL repo).
+# Malicious versions are usually found and pulled within days, so a week keeps most of them out.
+# Security updates are not delayed. libsamplerate is vendored in third_party/ and updated by hand.
+
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: weekly
+      day: monday
+      time: '07:00'
+      timezone: Europe/Copenhagen
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns:
+          - '*'
+
+  - package-ecosystem: gradle
+    directory: '/android'
+    schedule:
+      interval: weekly
+      day: monday
+      time: '07:00'
+      timezone: Europe/Copenhagen
+    cooldown:
+      default-days: 7
+    groups:
+      gradle:
+        patterns:
+          - '*'

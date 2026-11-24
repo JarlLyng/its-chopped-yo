@@ -1,6 +1,6 @@
 # Audio processing spec
 
-**Version 0.1 (2026-11-25).** The source of truth for the audio core on both platforms. The Swift
+**Version 0.2 (2026-11-25).** Version 0.2 adds resampling (section 5a). The source of truth for the audio core on both platforms. The Swift
 core (`ios/ChoppedCore`), the Kotlin core (`android/core`) and the reference implementation
 (`tools/reference.py`) follow this text. When the text and a core disagree, the core is wrong.
 
@@ -26,13 +26,14 @@ For one output file:
 2. Channels (section 3).
 3. Trim (section 4).
 4. Fade in, then fade out (section 5).
+4a. Resample (section 5a).
 5. Normalize (section 6).
 6. Quantize to integers, with or without dither (section 7).
 7. Write WAV (section 8).
 
 Slices and chains (sections 9 and 10) split or join after step 5 and quantize each output file on
-its own. Resampling is not in version 0.1: the output has the input's sample rate. It will use
-libsamplerate on both platforms and sit between steps 4 and 5.
+its own. Trim and fade lengths are in frames of the input's sample rate, since they come before the
+resampling.
 
 The settings for one run:
 
@@ -41,6 +42,7 @@ The settings for one run:
 | `mono` | `keep`, `sum`, `left`, `right` |
 | `trim` | none, or `[start, end)` in frames |
 | `fadeIn`, `fadeOut` | none, or `{frames, curve}` with curve `linear` or `equalPower` |
+| `sampleRate` | none, or the output sample rate in Hz |
 | `normalize` | none, or a target in dBFS from the table in section 6 |
 | `bits` | `16` or `24` |
 | `dither` | `true` or `false` |
@@ -114,6 +116,31 @@ The fade in runs first. If the two overlap, both multiply.
 - `linear`: `g(t) = t`
 - `equalPower`: `g(t) = sqrt(t)`. This is the constant-power curve: a fade out and a fade in of
   the same length always have squared gains that sum to one.
+
+## 5a. Resample
+
+Resampling uses **libsamplerate 0.2.2**, vendored in `third_party/libsamplerate` and compiled the same
+way on every platform (its `README.md`; above all `-ffp-contract=off`). The library does its own
+arithmetic in 32-bit floats and uses only `lrint` and `fabs` from the math library, both exact.
+
+If `sampleRate` is none or equals the input's rate, nothing happens. Otherwise:
+
+1. `ratio = sampleRate / inputRate`, both converted to double. It must lie in `[1/256, 256]`
+   (libsamplerate's limits), or it is an error ("bad ratio").
+2. The frames are interleaved, frame by frame and channel by channel, as 32-bit floats: each double
+   rounded to the nearest float.
+3. `capacity = floor(frames * ratio) + 256`, with `frames` converted to double and the product
+   floored to an integer.
+4. Call `src_simple` with converter `SRC_SINC_BEST_QUALITY` (0), the channel count, `input_frames =
+   frames`, `output_frames = capacity` and `src_ratio = ratio`. Any error code is an error
+   ("resample failed").
+5. The result is the first `output_frames_gen` frames, each float widened back to double and split
+   into channels. Its sample rate is `sampleRate`.
+
+The length is whatever libsamplerate generates, which can be one frame short of `frames * ratio`
+(48000 to 22050 Hz turns 4800 frames into 2204). Every platform runs the same code, so every
+platform gets the same length. Values above full scale can appear after resampling; normalize or the
+clamp in section 7 handles them.
 
 ## 6. Normalize
 
@@ -191,8 +218,9 @@ with the generator restarted for each.
 
 ## 10. Sample chains
 
-Each input goes through steps 1 to 5 with the same settings. All must then have the same channel
-count and sample rate, or it is an error. `S` is the longest length in frames. With `k` inputs and
+Each input goes through steps 1 to 5 with the same settings, so inputs with different sample rates
+can be chained when `sampleRate` is set. All must then have the same channel count and sample rate,
+or it is an error. `S` is the longest length in frames. With `k` inputs and
 `slots` (at least `k`; `k` when not given), the chain is `slots * S` frames of `0.0`, and input `j`
 is copied in from frame `j * S`. The chain is then quantized once and written as one file.
 

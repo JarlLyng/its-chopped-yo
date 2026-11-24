@@ -1,4 +1,6 @@
-// Spec sections 3 to 7, 9 and 10. Only + - * /, floor, sqrt and abs touch the audio.
+// Spec sections 3 to 7, 9 and 10. Only + - * /, floor, sqrt and abs touch the audio, apart from
+// libsamplerate in section 5a, which is the same C code on both platforms.
+import CSamplerate
 
 public enum Processing {
     /// Section 6: dBFS to the double nearest 10^(dB/20), written out so nothing computes a power.
@@ -30,6 +32,7 @@ public enum Processing {
         var a = applyChannels(input, s.mono)
         a = try trim(a, s.trim)
         a = try fade(a, fadeIn: s.fadeIn, fadeOut: s.fadeOut)
+        a = try resample(a, to: s.sampleRate)
         a = try normalize(a, s.normalizeDB)
         return a
     }
@@ -100,6 +103,42 @@ public enum Processing {
             }
         }
         return Audio(sampleRate: a.sampleRate, channels: chans)
+    }
+
+    // MARK: Section 5a
+
+    /// libsamplerate's `src_simple` with SRC_SINC_BEST_QUALITY, through interleaved 32-bit floats.
+    public static func resample(_ a: Audio, to rate: Int?) throws -> Audio {
+        guard let rate, rate != a.sampleRate else { return a }
+        let ratio = Double(rate) / Double(a.sampleRate)
+        guard ratio >= 1.0 / 256.0, ratio <= 256.0 else { throw ChoppedError.badRatio }
+        let nch = a.channels.count
+        let frames = a.frameCount
+        var input = [Float](repeating: 0, count: frames * nch)
+        for i in 0..<frames {
+            for c in 0..<nch { input[i * nch + c] = Float(a.channels[c][i]) }
+        }
+        let capacity = Int((Double(frames) * ratio).rounded(.down)) + 256
+        var output = [Float](repeating: 0, count: capacity * nch)
+        var generated = 0
+        let err: Int32 = input.withUnsafeBufferPointer { inp in
+            output.withUnsafeMutableBufferPointer { out in
+                var d = SRC_DATA(
+                    data_in: inp.baseAddress, data_out: out.baseAddress,
+                    input_frames: frames, output_frames: capacity,
+                    input_frames_used: 0, output_frames_gen: 0,
+                    end_of_input: 0, src_ratio: ratio)
+                let e = src_simple(&d, 0 /* SRC_SINC_BEST_QUALITY */, Int32(nch))
+                generated = d.output_frames_gen
+                return e
+            }
+        }
+        guard err == 0 else { throw ChoppedError.resampleFailed }
+        var chans = [[Double]](repeating: [Double](repeating: 0.0, count: generated), count: nch)
+        for i in 0..<generated {
+            for c in 0..<nch { chans[c][i] = Double(output[i * nch + c]) }
+        }
+        return Audio(sampleRate: rate, channels: chans)
     }
 
     // MARK: Section 6

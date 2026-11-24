@@ -50,6 +50,7 @@ final class SpecCasesTests: XCTestCase {
         XCTAssertThrowsError(try Processing.quantize(a, bits: 20, dither: false)) { XCTAssertEqual($0 as? ChoppedError, .badBits) }
         XCTAssertThrowsError(try Processing.sliceBounds(length: 3, count: 4)) { XCTAssertEqual($0 as? ChoppedError, .fewerFramesThanSlices) }
         XCTAssertThrowsError(try Wav.read(Array("RIFX....WAVE".utf8))) { XCTAssertEqual($0 as? ChoppedError, .notWave) }
+        XCTAssertThrowsError(try Processing.resample(a, to: 48000 * 300)) { XCTAssertEqual($0 as? ChoppedError, .badRatio) }
     }
 
     // MARK: Helpers
@@ -70,6 +71,7 @@ final class SpecCasesTests: XCTestCase {
         if let t = d["trim"] as? [Int] { s.trim = (t[0], t[1]) }
         s.fadeIn = fade(d["fadeIn"])
         s.fadeOut = fade(d["fadeOut"])
+        s.sampleRate = d["sampleRate"] as? Int
         s.normalizeDB = (d["normalize"] as? NSNumber)?.doubleValue
         s.bits = d["bits"] as! Int
         s.dither = d["dither"] as? Bool ?? false

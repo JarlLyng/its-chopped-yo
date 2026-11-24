@@ -1,4 +1,4 @@
-"""Reference implementation of specs/audio-processing.md, version 0.1.
+"""Reference implementation of specs/audio-processing.md, version 0.2.
 
 Standard library only. This is the spec written as code: the Swift and Kotlin cores must produce
 the same bytes as this file. Keep it plain and close to the spec text, not fast.
@@ -10,7 +10,9 @@ import math
 import struct
 from dataclasses import dataclass
 
-SPEC_VERSION = "0.1"
+import native  # tools/native.py: libsamplerate built for this machine
+
+SPEC_VERSION = "0.2"
 
 # Section 6: normalize targets, dBFS -> nearest double to 10^(dB/20). Never computed with pow.
 NORMALIZE_TARGETS = {
@@ -171,6 +173,25 @@ def fade(a: Audio, fade_in, fade_out) -> Audio:
     return Audio(a.rate, chans)
 
 
+def resample(a: Audio, rate) -> Audio:
+    """Section 5a: libsamplerate's src_simple, SRC_SINC_BEST_QUALITY, through 32-bit floats."""
+    if rate is None or rate == a.rate:
+        return a
+    ratio = float(rate) / float(a.rate)
+    if ratio < 1.0 / 256.0 or ratio > 256.0:
+        raise SpecError("bad ratio")
+    nch = len(a.channels)
+    frames = a.frames
+    interleaved = [a.channels[c][i] for i in range(frames) for c in range(nch)]
+    capacity = math.floor(float(frames) * ratio) + 256
+    try:
+        out = native.src_simple(interleaved, frames, nch, ratio, capacity, converter=0)
+    except RuntimeError as e:
+        raise SpecError("resample failed") from e
+    gen = len(out) // nch
+    return Audio(int(rate), [[out[i * nch + c] for i in range(gen)] for c in range(nch)])
+
+
 def normalize(a: Audio, db) -> Audio:
     if db is None:
         return a
@@ -193,6 +214,7 @@ def process(a: Audio, s: dict) -> Audio:
     a = apply_channels(a, s.get("mono", "keep"))
     a = trim(a, s.get("trim"))
     a = fade(a, s.get("fadeIn"), s.get("fadeOut"))
+    a = resample(a, s.get("sampleRate"))
     a = normalize(a, s.get("normalize"))
     return a
 

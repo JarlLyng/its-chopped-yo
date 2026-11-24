@@ -57,6 +57,7 @@ class SpecCasesTest {
         expect(Reason.BAD_BITS) { Processing.quantize(a, 20, false) }
         expect(Reason.FEWER_FRAMES_THAN_SLICES) { Processing.sliceBounds(3, 4) }
         expect(Reason.NOT_WAVE) { Wav.read("RIFX....WAVE".toByteArray()) }
+        expect(Reason.BAD_RATIO) { Processing.resample(a, 48000 * 300) }
     }
 
     // ---- Helpers
@@ -86,6 +87,7 @@ class SpecCasesTest {
         trim = d.optJSONArray("trim")?.let { TrimRange(it.getInt(0), it.getInt(1)) },
         fadeIn = fade(d.optJSONObject("fadeIn")),
         fadeOut = fade(d.optJSONObject("fadeOut")),
+        sampleRate = if (d.has("sampleRate")) d.getInt("sampleRate") else null,
         normalizeDb = if (d.has("normalize")) d.getDouble("normalize") else null,
         bits = d.getInt("bits"),
         dither = d.optBoolean("dither", false),

@@ -1,5 +1,5 @@
 {
-  "specVersion": "0.1",
+  "specVersion": "0.2",
   "outputs": {
     "rightpan_sum_24": {
       "rightpan_sum_24.wav": "1ab83b8b8b2d5e97438ca12e1a7f03c2d7bb78b43c4c53fdcf8397fdd425423c"
@@ -58,6 +58,30 @@
     },
     "chain_3": {
       "chain_3.wav": "4360473d65a46bdac81b89aa395515c950732626c4db52b2701bcef96aca7340"
+    },
+    "resample_44k_to_48k_16_dither": {
+      "resample_44k_to_48k_16_dither.wav": "e32118d5e681ee21cc2a41f13370f0861a473d7caa0212155836fe321491c7ec"
+    },
+    "resample_to_46875_sum_16": {
+      "resample_to_46875_sum_16.wav": "619da1b4773c65fff5961d0efa2b70ffe0c19c4a48e1c4c0c02316550e05d731"
+    },
+    "resample_96k_stereo_to_48k_24": {
+      "resample_96k_stereo_to_48k_24.wav": "f0ea2fd5ca5bfff15e3476330ea49dc56aba6a3782c98d0104b1aeb233e966e2"
+    },
+    "resample_u8_22k_to_48k_16": {
+      "resample_u8_22k_to_48k_16.wav": "4d58ad4ec75e1d1ac38f489187fdf623e2b89429afa9885f25ec7b27e0cf2417"
+    },
+    "resample_down_to_22050_24": {
+      "resample_down_to_22050_24.wav": "a66e136650bb5177d54dba7fac6ea0bcbbe4acd4330d1533d2f24ffb0cc49e24"
+    },
+    "resample_six_ch_to_44k_24": {
+      "resample_six_ch_to_44k_24.wav": "6797b3ee5149d755c8610cf68a3c670f2151316aa70d186a08891496bf1897f4"
+    },
+    "resample_after_fade_normalized_16": {
+      "resample_after_fade_normalized_16.wav": "87c71a6fdfa6d1dd13deeb19d9237c6963a64f0c1460ab440ee42f32b6736f94"
+    },
+    "chain_mixed_rates_48k": {
+      "chain_mixed_rates_48k.wav": "6c772387c10f5dad9d492f4cf00ff9633ee0e06c218800a32df50a205edf1621"
     },
     "chain_3_slots_4": {
       "chain_3_slots_4.wav": "8c67e84916cc7b68fe28b0c71eba98621ac469eaea1644310b270fb276e1f456"
