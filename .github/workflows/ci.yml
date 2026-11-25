@@ -2,9 +2,13 @@
 #
 # 1. reference: rebuilds testdata/ from the spec on Linux x86_64 and fails if anything differs from
 #    what was committed (made on an arm64 Mac). This is the check across CPU architectures.
-# 2. swift: the Swift core against every case, then a build for iOS devices.
+# 2. swift: the Swift core against every case, a build of the package for iOS devices, and a
+#    build of the iOS test app (ios/App, generated with XcodeGen) for the simulator.
 # 3. kotlin: the Kotlin core against every case on the JVM (with a host build of libsamplerate),
-#    then the NDK build of the Android library.
+#    then the NDK build of the Android library and the Android test app.
+#
+# The device test (android/core/src/androidTest) needs an emulator or a phone and runs locally:
+# ./gradlew :core:connectedDebugAndroidTest. Both test apps also have a self-test button.
 #
 # GitHub's own actions stay on a tag; third-party actions would be pinned to a commit SHA
 # (PROJECT_STANDARDS.md section 4 in the hub). There are none here.
@@ -48,6 +52,13 @@ jobs:
         run: swift test
       - name: Build for iOS devices
         run: xcodebuild -scheme ChoppedCore -destination 'generic/platform=iOS' build -quiet
+      - name: Build the iOS test app for the simulator
+        run: |
+          brew install xcodegen
+          cd ios/App
+          xcodegen generate
+          xcodebuild -project ItsChoppedYo.xcodeproj -scheme ItsChoppedYo \
+            -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build -quiet
 
   kotlin:
     name: Kotlin core
@@ -63,5 +74,5 @@ jobs:
           java-version: '17'
       - name: Tests on the JVM (every case in testdata/cases.json)
         run: ./gradlew :core:testDebugUnitTest --console=plain
-      - name: NDK build of the Android library
-        run: ./gradlew :core:assembleDebug --console=plain
+      - name: NDK build of the Android library, and the Android test app
+        run: ./gradlew :core:assembleDebug :app:assembleDebug --console=plain

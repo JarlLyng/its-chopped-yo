@@ -22,8 +22,8 @@ purchase, no subscription.
 | `specs/` | The audio processing spec, the source of truth for both apps |
 | `testdata/` | Generated input files, expected output files and their checksums |
 | `tools/` | The generator and the reference implementation of the spec (Python, standard library only) |
-| `ios/` | The Swift side: the `ChoppedCore` sources and tests (the package is `Package.swift` at the root) |
-| `android/` | The Kotlin side: the `core` module with the audio core, its JNI bridge and its tests |
+| `ios/` | The Swift side: `ChoppedCore` and its tests (the package is `Package.swift` at the root), and the test app in `ios/App` |
+| `android/` | The Kotlin side: the `core` module with the audio core, its JNI bridge and its tests, and the test app in `app` |
 | `third_party/` | libsamplerate 0.2.2 (BSD-2-Clause), the resampler both platforms compile from the same source |
 
 ## Run the tests
@@ -53,7 +53,21 @@ cd android && ./gradlew :core:connectedDebugAndroidTest
 ```
 
 All of them read `testdata/cases.json`, run every case and compare the SHA-256 of each output file
-with `testdata/expected.json`. CI runs both, and rebuilds the expected files on Linux to check
+with `testdata/expected.json`.
+
+## The test apps
+
+Both platforms have a small test app, a test screen rather than the real app. It runs the same
+self-test on the phone, and it lets you pick a WAV or AIFF file, choose the settings, process it and
+save the result, so the files can be tried on a real sampler.
+
+```bash
+cd ios/App && xcodegen generate && open ItsChoppedYo.xcodeproj
+```
+
+```bash
+cd android && ./gradlew :app:installDebug
+``` CI runs both, and rebuilds the expected files on Linux to check
 that they come out the same on another CPU architecture.
 
 ## Related apps

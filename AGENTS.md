@@ -85,7 +85,9 @@ Built so far (the audio core only, no app UI yet), on both platforms, as in `spe
 - Equal slices and sample chains.
 
 ### Features that do NOT exist (common hallucination targets)
-- No app UI or test screens yet. No AIFF-C output, no compressed AIFF-C input (ima4, ulaw, alaw).
+- No real app UI yet: `ios/App` and `android/app` are test screens (a self-test, one file in, its
+  settings, process, save), not the product, and use no design tokens. No AIFF-C output, no
+  compressed AIFF-C input (ima4, ulaw, alaw).
 - No transfer to Digitakt or Digitakt II (they take files only through Elektron Transfer or SDS).
 - No editing of a machine's projects, presets, patterns or p-locks.
 - No effects (EQ, compression, time-stretch, pitch), no sequencer, no pads, no stem separation.
@@ -106,6 +108,12 @@ Built so far (the audio core only, no app UI yet), on both platforms, as in `spe
   emulator (ART and the NDK library), with the test files packed into the test APK's assets.
 - libsamplerate is always compiled with the flags in `third_party/libsamplerate/README.md`
   (`-ffp-contract=off`, never `-ffast-math`), in all four builds.
+- The iOS test app: `cd ios/App && xcodegen generate` (XcodeGen 2.46.0; the `.xcodeproj` is
+  generated, not committed), then build in Xcode. No development team is set on purpose.
+- The Android test app: `cd android && ./gradlew :app:installDebug`. Saving uses the system folder
+  picker; Android 11+ refuses the root of internal storage and `Download` itself, so pick a subfolder.
+- Both test apps and both test suites run the same case runner: `ios/ChoppedSpecRunner` and
+  `android/core/src/sharedTest`.
 - A change to the spec changes `tools/reference.py` and the testdata in the same commit; both
   cores must then pass unchanged expectations.
 

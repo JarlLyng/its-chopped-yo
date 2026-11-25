@@ -1,0 +1,55 @@
+# The iOS test app for It's chopped, yo! Generate the project with XcodeGen 2.46.0:
+#
+#     cd ios/App && xcodegen generate
+#
+# The .xcodeproj is generated, not committed. No development team is set: simulator builds need no
+# signing, and nothing is registered with Apple until the owner says so (the bundle ID is the
+# proposed final one, com.iamjarl.itschoppedyo, and becomes permanent only once registered).
+name: ItsChoppedYo
+options:
+  bundleIdPrefix: com.iamjarl
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+packages:
+  ChoppedCore:
+    path: ../..
+targets:
+  ItsChoppedYo:
+    type: application
+    platform: iOS
+    sources:
+      - path: ItsChoppedYo
+      # The self-test's inputs, cases and expected hashes, copied flat into the app bundle.
+      - path: ../../testdata
+        name: SelfTestData
+        buildPhase: resources
+        excludes:
+          - "out/**"
+          - "expected/**"
+    dependencies:
+      - package: ChoppedCore
+        product: ChoppedCore
+      - package: ChoppedCore
+        product: ChoppedSpecRunner
+    info:
+      path: ItsChoppedYo/Info.plist
+      properties:
+        CFBundleDisplayName: "It's chopped, yo!"
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        NSHumanReadableCopyright: "© 2026 IAMJARL"
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.iamjarl.itschoppedyo
+        TARGETED_DEVICE_FAMILY: "1,2"

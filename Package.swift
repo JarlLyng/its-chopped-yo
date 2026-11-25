@@ -9,6 +9,7 @@ let package = Package(
     platforms: [.iOS(.v17), .macOS(.v14)],
     products: [
         .library(name: "ChoppedCore", targets: ["ChoppedCore"]),
+        .library(name: "ChoppedSpecRunner", targets: ["ChoppedSpecRunner"]),
     ],
     targets: [
         // libsamplerate 0.2.2, unchanged. The flags match every other build of it
@@ -36,9 +37,16 @@ let package = Package(
             dependencies: ["CSamplerate"],
             path: "ios/ChoppedCore/Sources/ChoppedCore"
         ),
+        // Runs testdata/cases.json against testdata/expected.json: the XCTest suite and the test
+        // app's self-test share it.
+        .target(
+            name: "ChoppedSpecRunner",
+            dependencies: ["ChoppedCore"],
+            path: "ios/ChoppedSpecRunner"
+        ),
         .testTarget(
             name: "ChoppedCoreTests",
-            dependencies: ["ChoppedCore"],
+            dependencies: ["ChoppedCore", "ChoppedSpecRunner"],
             path: "ios/ChoppedCore/Tests/ChoppedCoreTests"
         ),
     ]
