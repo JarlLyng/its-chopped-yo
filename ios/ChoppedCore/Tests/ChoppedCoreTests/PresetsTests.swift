@@ -46,4 +46,20 @@ final class PresetsTests: XCTestCase {
         XCTAssertEqual(Describe.summary(Audio(sampleRate: 96000, channels: [[Double](repeating: 0, count: 9600), [Double](repeating: 0, count: 9600)])),
                        "96 kHz · stereo · 0.10 s")
     }
+
+    func testDisplayText() {
+        let st = Audio(sampleRate: 96000, channels: [[Double](repeating: 0, count: 136_320), [Double](repeating: 0.8, count: 136_320)])
+        let mono = Audio(sampleRate: 44100, channels: [[Double](repeating: 0, count: 44100 * 65)])
+        XCTAssertEqual(Describe.inLine(st), "IN 96K · ST · 1.42S")
+        XCTAssertEqual(Describe.inLine(mono), "IN 44.1K · MONO · 1:05")
+        XCTAssertEqual(Describe.outLine(mono, bits: 16, format: .wav), "OUT 44.1K · 16B · MONO · WAV")
+        XCTAssertEqual(Describe.outLine(st, bits: 24, format: .aiff), "OUT 96K · 24B · ST · AIFF")
+        XCTAssertEqual(Describe.shortChannels(6), "6CH")
+        XCTAssertEqual(Describe.shortRate(46875), "46.875K")
+        XCTAssertEqual(Describe.shortPeak(st), "PK -1.9")
+        XCTAssertEqual(Describe.shortPeak(mono), "SILENT")
+        XCTAssertEqual(Describe.size(512), "512 B")
+        XCTAssertEqual(Describe.size(67_000), "66 KB")
+        XCTAssertEqual(Describe.size(3_400_000), "3.2 MB")
+    }
 }

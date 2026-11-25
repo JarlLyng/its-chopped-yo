@@ -119,4 +119,44 @@ object Describe {
     /** "96 kHz · stereo · 0.10 s" */
     fun summary(a: Audio): String =
         "${rate(a.sampleRate)} · ${channels(a.channels.size)} · ${duration(a.frameCount, a.sampleRate)}"
+
+    // ---- The display: short uppercase values, like a sampler's screen
+
+    /** 48000 → "48K", 44100 → "44.1K". */
+    fun shortRate(hz: Int): String = rate(hz).dropLast(4) + "K"
+
+    /** 1 → "MONO", 2 → "ST", n → "nCH". */
+    fun shortChannels(n: Int): String = when (n) {
+        1 -> "MONO"
+        2 -> "ST"
+        else -> "${n}CH"
+    }
+
+    /** "1.42S" under a minute, otherwise "1:05". */
+    fun shortDuration(frames: Int, sampleRate: Int): String {
+        val d = duration(frames, sampleRate)
+        return if (d.endsWith(" s")) d.dropLast(2) + "S" else d
+    }
+
+    /** "PK -1.9", or "SILENT". */
+    fun shortPeak(a: Audio): String {
+        val p = peak(a)
+        return if (p == "silent") "SILENT" else "PK " + p.drop(5).dropLast(5)
+    }
+
+    /** "IN 96K · ST · 1.42S" */
+    fun inLine(a: Audio): String =
+        "IN ${shortRate(a.sampleRate)} · ${shortChannels(a.channels.size)} · ${shortDuration(a.frameCount, a.sampleRate)}"
+
+    /** "OUT 48K · 16B · MONO · WAV" */
+    fun outLine(a: Audio, bits: Int, format: OutputFormat): String =
+        "OUT ${shortRate(a.sampleRate)} · ${bits}B · ${shortChannels(a.channels.size)} · ${if (format == OutputFormat.AIFF) "AIFF" else "WAV"}"
+
+    /** A file size: "512 B", "66 KB" (rounded up), "3.2 MB" (rounded down). */
+    fun size(bytes: Long): String {
+        if (bytes < 1024) return "$bytes B"
+        if (bytes < 1024 * 1024) return "${(bytes + 1023) / 1024} KB"
+        val tenths = bytes * 10 / (1024 * 1024)
+        return "${tenths / 10}.${tenths % 10} MB"
+    }
 }

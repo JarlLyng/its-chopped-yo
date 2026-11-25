@@ -94,4 +94,46 @@ public enum Describe {
     public static func summary(_ a: Audio) -> String {
         "\(rate(a.sampleRate)) · \(channels(a.channels.count)) · \(duration(frames: a.frameCount, sampleRate: a.sampleRate))"
     }
+
+    // MARK: The display: short uppercase values, like a sampler's screen
+
+    /// 48000 → "48K", 44100 → "44.1K".
+    public static func shortRate(_ hz: Int) -> String {
+        String(rate(hz).dropLast(4)) + "K"
+    }
+
+    /// 1 → "MONO", 2 → "ST", n → "nCH".
+    public static func shortChannels(_ n: Int) -> String {
+        n == 1 ? "MONO" : n == 2 ? "ST" : "\(n)CH"
+    }
+
+    /// "1.42S" under a minute, otherwise "1:05".
+    public static func shortDuration(frames: Int, sampleRate: Int) -> String {
+        let d = duration(frames: frames, sampleRate: sampleRate)
+        return d.hasSuffix(" s") ? String(d.dropLast(2)) + "S" : d
+    }
+
+    /// "PK -1.9", or "SILENT".
+    public static func shortPeak(_ a: Audio) -> String {
+        let p = peak(a)
+        return p == "silent" ? "SILENT" : "PK " + p.dropFirst(5).dropLast(5)
+    }
+
+    /// "IN 96K · ST · 1.42S"
+    public static func inLine(_ a: Audio) -> String {
+        "IN \(shortRate(a.sampleRate)) · \(shortChannels(a.channels.count)) · \(shortDuration(frames: a.frameCount, sampleRate: a.sampleRate))"
+    }
+
+    /// "OUT 48K · 16B · MONO · WAV"
+    public static func outLine(_ a: Audio, bits: Int, format: OutputFormat) -> String {
+        "OUT \(shortRate(a.sampleRate)) · \(bits)B · \(shortChannels(a.channels.count)) · \(format == .aiff ? "AIFF" : "WAV")"
+    }
+
+    /// A file size: "512 B", "66 KB" (rounded up), "3.2 MB" (rounded down).
+    public static func size(_ bytes: Int) -> String {
+        if bytes < 1024 { return "\(bytes) B" }
+        if bytes < 1024 * 1024 { return "\((bytes + 1023) / 1024) KB" }
+        let tenths = bytes * 10 / (1024 * 1024)
+        return "\(tenths / 10).\(tenths % 10) MB"
+    }
 }

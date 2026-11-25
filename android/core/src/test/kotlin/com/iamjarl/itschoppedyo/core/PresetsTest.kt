@@ -56,4 +56,21 @@ class PresetsTest {
         assertEquals("silent", Describe.peak(Audio(48000, listOf(doubleArrayOf(0.0, 0.0)))))
         assertEquals("96 kHz · stereo · 0.10 s", Describe.summary(Audio(96000, listOf(DoubleArray(9600), DoubleArray(9600)))))
     }
+
+    @Test
+    fun displayText() {
+        val st = Audio(96000, listOf(DoubleArray(136_320), DoubleArray(136_320) { 0.8 }))
+        val mono = Audio(44100, listOf(DoubleArray(44100 * 65)))
+        assertEquals("IN 96K · ST · 1.42S", Describe.inLine(st))
+        assertEquals("IN 44.1K · MONO · 1:05", Describe.inLine(mono))
+        assertEquals("OUT 44.1K · 16B · MONO · WAV", Describe.outLine(mono, 16, OutputFormat.WAV))
+        assertEquals("OUT 96K · 24B · ST · AIFF", Describe.outLine(st, 24, OutputFormat.AIFF))
+        assertEquals("6CH", Describe.shortChannels(6))
+        assertEquals("46.875K", Describe.shortRate(46875))
+        assertEquals("PK -1.9", Describe.shortPeak(st))
+        assertEquals("SILENT", Describe.shortPeak(mono))
+        assertEquals("512 B", Describe.size(512))
+        assertEquals("66 KB", Describe.size(67_000))
+        assertEquals("3.2 MB", Describe.size(3_400_000))
+    }
 }
