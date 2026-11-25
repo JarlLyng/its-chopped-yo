@@ -73,15 +73,21 @@ known and what is unknown.
 
 ## App features (be precise, do not invent features that don't exist)
 
-Built so far (the audio core only, no app UI yet), on both platforms, as in `specs/audio-processing.md`:
+Built so far (the audio core only, no app UI yet), on both platforms, as in `specs/audio-processing.md` (v0.3):
 - WAV reading (PCM 8/16/24/32-bit, 32/64-bit float, WAVE_FORMAT_EXTENSIBLE) and writing (PCM 16/24-bit).
+- AIFF reading (8/16/24/32-bit; AIFF-C `NONE`, `sowt`, `fl32`, `fl64`) and writing (plain AIFF,
+  16/24-bit). Sample rates must be whole numbers of hertz.
 - Mono downmix: stereo summed as (L+R)/2, or left or right only; 3 to 6 channels with It's mono's weights.
 - Trim by frame range; fade in and out (linear, or equal power via square root).
+- Resampling with libsamplerate 0.2.2 (`third_party/`, SRC_SINC_BEST_QUALITY), the same C code on both:
+  SwiftPM on iOS, NDK plus JNI on Android, a host build for the JVM tests.
 - Peak normalize to a fixed list of targets; quantize with optional TPDF dither from a seeded xorshift32.
 - Equal slices and sample chains.
 
 ### Features that do NOT exist (common hallucination targets)
-- No resampling yet (planned with libsamplerate on both platforms). No AIFF yet.
+- No real app UI yet: `ios/App` and `android/app` are test screens (a self-test, one file in, its
+  settings, process, save), not the product. They already use the design tokens. No AIFF-C output, no
+  compressed AIFF-C input (ima4, ulaw, alaw).
 - No transfer to Digitakt or Digitakt II (they take files only through Elektron Transfer or SDS).
 - No editing of a machine's projects, presets, patterns or p-locks.
 - No effects (EQ, compression, time-stretch, pitch), no sequencer, no pads, no stem separation.
@@ -95,16 +101,47 @@ Built so far (the audio core only, no app UI yet), on both platforms, as in `spe
 
 ## Build & run
 - `python3 tools/make_testdata.py` regenerates `testdata/` from the reference implementation.
-- `cd ios/ChoppedCore && swift test` runs the Swift core against every case.
+- `swift test` (repo root) runs the Swift core against every case.
 - `cd android && ./gradlew :core:testDebugUnitTest` runs the Kotlin core against every case
-  (set `JAVA_HOME` to a JDK 17 and `sdk.dir` in `android/local.properties`).
+  (set `JAVA_HOME` to a JDK 17 and `sdk.dir` in `android/local.properties`); `:core:assembleDebug`
+  builds the NDK library; `:core:connectedDebugAndroidTest` runs every case on a connected device or
+  emulator (ART and the NDK library), with the test files packed into the test APK's assets.
+- libsamplerate is always compiled with the flags in `third_party/libsamplerate/README.md`
+  (`-ffp-contract=off`, never `-ffast-math`), in all four builds.
+- The iOS test app: `cd ios/App && xcodegen generate` (XcodeGen 2.46.0; the `.xcodeproj` is
+  generated, not committed), then build in Xcode. No development team is set on purpose.
+- **One emulator per app** (the hub's `PROJECT_STANDARDS.md` §1): this repo's AVD is
+  `ItsChoppedYo_Pixel` on port 5600 (`emulator -avd ItsChoppedYo_Pixel -port 5600`). Send every adb
+  command with `-s emulator-5600`, and check `adb -s emulator-5600 emu avd name` first.
+- The Android test app: `cd android && ./gradlew :app:installDebug`. Saving uses the system folder
+  picker; Android 11+ refuses the root of internal storage and `Download` itself, so pick a subfolder.
+- Both test apps and both test suites run the same case runner: `ios/ChoppedSpecRunner` and
+  `android/core/src/sharedTest`.
 - A change to the spec changes `tools/reference.py` and the testdata in the same commit; both
   cores must then pass unchanged expectations.
 
 ## Conventions
 - **Same bytes on both platforms.** All processing in 64-bit float, only `+ - * /`, `floor` and
-  `sqrt` (all exactly rounded under IEEE 754). No `sin`, `pow` or `log` in the audio path: libm
-  results differ between platforms.
-- Uses `iamjarl-design` tokens once there is UI, with no hardcoded colors, spacing, radius or type.
+  `sqrt` (all exactly rounded under IEEE 754), plus libsamplerate. No `sin`, `pow` or `log` in the
+  audio path: libm results differ between platforms.
+- Uses `iamjarl-design` tokens, with no hardcoded colors, spacing, radius or type. Pinned to v1.38.0:
+  iOS through the `IAMJARLDesignTokens` package (`exactVersion` in `ios/App/project.yml`), Android
+  through an unedited copy of `dist/kotlin/DesignTokens.kt` from the tag in
+  `android/app/src/main/kotlin/com/iamjarl/design/`. Upgrade both together. A missing value is an
+  issue in iamjarl-design, never a hardcoded value here.
 - Privacy-first: telemetry only if anonymous, and disclosed, following the hub's five rules and
-  recipe (`PROJECT_STANDARDS.md`, "Privacy-first"). Not decided for this app yet.
+  recipe (`PROJECT_STANDARDS.md`, "Privacy-first").
+- **Telemetry, decided by the owner:** anonymous crash reports only, with Sentry, on both platforms,
+  from the first version users get. No feature counts. Not built yet: there is no Sentry in
+  `Package.swift` or the Gradle files.
+  - One Sentry project for both platforms, `itschoppedyo` (Error Monitoring only). The DSN comes
+    from the owner when there is a build for testers; until then build without one, so the app
+    sends nothing.
+  - The user is `anonymous`. On Android, `beforeSend` removes `contexts.device.id`.
+  - No session replay, screenshots, view hierarchy or tracing.
+  - Sample file names and paths are the user's content: replace them with `<path>` in messages,
+    exceptions and breadcrumbs.
+  - The organization's scrubbing replaces the random parts of Android's `/data/app/` paths with
+    `[Filtered]`, so Android is not waiting on that any more.
+  - Disclose it: `PrivacyInfo.xcprivacy`, the privacy policy and Play Data safety name crash data,
+    performance data and other diagnostic data ("Crash logs, Diagnostics").

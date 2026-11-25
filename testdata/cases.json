@@ -1,0 +1,450 @@
+{
+  "specVersion": "0.3",
+  "cases": [
+    {
+      "id": "rightpan_sum_24",
+      "inputs": [
+        "noise_right_st24.wav"
+      ],
+      "settings": {
+        "mono": "sum",
+        "bits": 24,
+        "dither": false
+      }
+    },
+    {
+      "id": "stereo_keep_16_dither",
+      "inputs": [
+        "sine_st24.wav"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 16,
+        "dither": true
+      }
+    },
+    {
+      "id": "trim_fade_linear_16",
+      "inputs": [
+        "sine_m16.wav"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 16,
+        "dither": false,
+        "trim": [
+          1000,
+          20000
+        ],
+        "fadeIn": {
+          "frames": 480,
+          "curve": "linear"
+        },
+        "fadeOut": {
+          "frames": 960,
+          "curve": "linear"
+        }
+      }
+    },
+    {
+      "id": "trim_fade_equalpower_16_dither",
+      "inputs": [
+        "sine_m16.wav"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 16,
+        "dither": true,
+        "trim": [
+          1000,
+          20000
+        ],
+        "fadeIn": {
+          "frames": 480,
+          "curve": "equalPower"
+        },
+        "fadeOut": {
+          "frames": 960,
+          "curve": "equalPower"
+        }
+      }
+    },
+    {
+      "id": "normalize_quiet_24",
+      "inputs": [
+        "quiet_m24.wav"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 24,
+        "dither": false,
+        "normalize": -0.3
+      }
+    },
+    {
+      "id": "surround51_sum_24",
+      "inputs": [
+        "six_ch_24.wav"
+      ],
+      "settings": {
+        "mono": "sum",
+        "bits": 24,
+        "dither": false
+      }
+    },
+    {
+      "id": "float_overs_clamp_16",
+      "inputs": [
+        "float_overs_st32f.wav"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 16,
+        "dither": false
+      }
+    },
+    {
+      "id": "float_overs_normalized_16",
+      "inputs": [
+        "float_overs_st32f.wav"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 16,
+        "dither": false,
+        "normalize": -1.0
+      }
+    },
+    {
+      "id": "u8_to_16",
+      "inputs": [
+        "u8_m.wav"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 16,
+        "dither": false
+      }
+    },
+    {
+      "id": "extensible_left_24",
+      "inputs": [
+        "ext_st24.wav"
+      ],
+      "settings": {
+        "mono": "left",
+        "bits": 24,
+        "dither": false
+      }
+    },
+    {
+      "id": "extensible_right_16_dither",
+      "inputs": [
+        "ext_st24.wav"
+      ],
+      "settings": {
+        "mono": "right",
+        "bits": 16,
+        "dither": true
+      }
+    },
+    {
+      "id": "odd_frames_24",
+      "inputs": [
+        "odd_m24.wav"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 24,
+        "dither": false
+      }
+    },
+    {
+      "id": "float64_to_24",
+      "inputs": [
+        "float64_m.wav"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 24,
+        "dither": false,
+        "normalize": -0.1
+      }
+    },
+    {
+      "id": "rate_44k_kept_24",
+      "inputs": [
+        "sine_m16_44k.wav"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 24,
+        "dither": false
+      }
+    },
+    {
+      "id": "skips_unknown_chunks_16",
+      "inputs": [
+        "chunks_m16.wav"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 16,
+        "dither": false
+      }
+    },
+    {
+      "id": "slices_8",
+      "mode": "slices",
+      "slices": 8,
+      "inputs": [
+        "sine_m16.wav"
+      ],
+      "settings": {
+        "mono": "sum",
+        "bits": 16,
+        "dither": true,
+        "fadeIn": {
+          "frames": 48,
+          "curve": "linear"
+        }
+      }
+    },
+    {
+      "id": "chain_3",
+      "mode": "chain",
+      "inputs": [
+        "sine_m16.wav",
+        "odd_m24.wav",
+        "quiet_m24.wav"
+      ],
+      "settings": {
+        "mono": "sum",
+        "bits": 16,
+        "dither": true,
+        "normalize": -0.3
+      }
+    },
+    {
+      "id": "resample_44k_to_48k_16_dither",
+      "inputs": [
+        "sine_m16_44k.wav"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 16,
+        "dither": true,
+        "sampleRate": 48000
+      }
+    },
+    {
+      "id": "resample_to_46875_sum_16",
+      "inputs": [
+        "sine_st24.wav"
+      ],
+      "settings": {
+        "mono": "sum",
+        "bits": 16,
+        "dither": false,
+        "sampleRate": 46875
+      }
+    },
+    {
+      "id": "resample_96k_stereo_to_48k_24",
+      "inputs": [
+        "sine_st24_96k.wav"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 24,
+        "dither": false,
+        "sampleRate": 48000
+      }
+    },
+    {
+      "id": "resample_u8_22k_to_48k_16",
+      "inputs": [
+        "u8_m.wav"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 16,
+        "dither": false,
+        "sampleRate": 48000
+      }
+    },
+    {
+      "id": "resample_down_to_22050_24",
+      "inputs": [
+        "noise_right_st24.wav"
+      ],
+      "settings": {
+        "mono": "sum",
+        "bits": 24,
+        "dither": false,
+        "sampleRate": 22050
+      }
+    },
+    {
+      "id": "resample_six_ch_to_44k_24",
+      "inputs": [
+        "six_ch_24.wav"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 24,
+        "dither": false,
+        "sampleRate": 44100
+      }
+    },
+    {
+      "id": "resample_after_fade_normalized_16",
+      "inputs": [
+        "sine_m16.wav"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 16,
+        "dither": true,
+        "trim": [
+          0,
+          12000
+        ],
+        "fadeOut": {
+          "frames": 2400,
+          "curve": "equalPower"
+        },
+        "sampleRate": 32000,
+        "normalize": -0.1
+      }
+    },
+    {
+      "id": "chain_mixed_rates_48k",
+      "mode": "chain",
+      "inputs": [
+        "sine_m16_44k.wav",
+        "sine_m16.wav",
+        "u8_m.wav"
+      ],
+      "settings": {
+        "mono": "sum",
+        "bits": 16,
+        "dither": true,
+        "normalize": -0.3,
+        "sampleRate": 48000
+      }
+    },
+    {
+      "id": "aiff_16_to_wav_16",
+      "inputs": [
+        "sine_st16.aif"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 16,
+        "dither": false
+      }
+    },
+    {
+      "id": "aiff_24_44k_odd_to_aiff_24",
+      "inputs": [
+        "sine_m24_44k.aif"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 24,
+        "dither": false,
+        "format": "aiff"
+      }
+    },
+    {
+      "id": "aiff_8_signed_to_16",
+      "inputs": [
+        "s8_m.aif"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 16,
+        "dither": false
+      }
+    },
+    {
+      "id": "aifc_sowt_sum_to_aiff_16_dither",
+      "inputs": [
+        "sowt_st16.aifc"
+      ],
+      "settings": {
+        "mono": "sum",
+        "bits": 16,
+        "dither": true,
+        "format": "aiff"
+      }
+    },
+    {
+      "id": "aifc_fl32_normalized_to_aiff_24",
+      "inputs": [
+        "fl32_m.aifc"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 24,
+        "dither": false,
+        "normalize": -0.3,
+        "format": "aiff"
+      }
+    },
+    {
+      "id": "aiff_odd_layout_to_wav_16",
+      "inputs": [
+        "odd_layout_m16.aif"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 16,
+        "dither": false
+      }
+    },
+    {
+      "id": "wav_to_aiff_46875_16_dither",
+      "inputs": [
+        "sine_m16.wav"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 16,
+        "dither": true,
+        "sampleRate": 46875,
+        "format": "aiff"
+      }
+    },
+    {
+      "id": "slices_4_aiff",
+      "mode": "slices",
+      "slices": 4,
+      "inputs": [
+        "sine_st16.aif"
+      ],
+      "settings": {
+        "mono": "keep",
+        "bits": 16,
+        "dither": false,
+        "format": "aiff"
+      }
+    },
+    {
+      "id": "chain_3_slots_4",
+      "mode": "chain",
+      "slots": 4,
+      "inputs": [
+        "sine_m16.wav",
+        "odd_m24.wav",
+        "quiet_m24.wav"
+      ],
+      "settings": {
+        "mono": "sum",
+        "bits": 24,
+        "dither": false
+      }
+    }
+  ]
+}
