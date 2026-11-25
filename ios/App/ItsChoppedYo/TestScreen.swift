@@ -1,5 +1,6 @@
 import ChoppedCore
 import ChoppedSpecRunner
+import IAMJARLDesignTokens
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -27,6 +28,11 @@ struct TestScreen: View {
         }
     }
 
+    /// A step of the token type scale, as a Dynamic Type style so it follows the system text size.
+    static func font(_ style: DesignTokens.Typography.Style) -> Font {
+        .system(style.textStyle)
+    }
+
     // MARK: Self-test
 
     private var selfTestSection: some View {
@@ -36,14 +42,18 @@ struct TestScreen: View {
                 .accessibilityIdentifier("selfTestButton")
             if let line = model.selfTestSummary {
                 Text(line)
-                    .foregroundStyle(model.selfTestPassed ? .green : .red)
+                    .foregroundStyle(model.selfTestPassed ? DesignTokens.Palette.State.success : DesignTokens.Palette.State.error)
                     .accessibilityIdentifier("selfTestResult")
             }
-            ForEach(model.selfTestProblems, id: \.self) { Text($0).font(.caption).foregroundStyle(.red) }
+            ForEach(model.selfTestProblems, id: \.self) {
+                Text($0).font(Self.font(.xs)).foregroundStyle(DesignTokens.Palette.State.error)
+            }
         } header: {
             Text("Self-test")
         } footer: {
             Text("Runs every case in the test files on this device and compares each output's SHA-256 with the reference.")
+                .font(Self.font(.xs))
+                .foregroundStyle(DesignTokens.Palette.Text.tertiary)
         }
     }
 
@@ -53,10 +63,10 @@ struct TestScreen: View {
         Section("File") {
             Button("Choose a WAV or AIFF file") { importing = true }
             if let info = model.inputInfo {
-                Text(info).font(.callout.monospaced())
+                Text(info).font(Self.font(.sm).monospaced())
             }
             if let error = model.error {
-                Text(error).foregroundStyle(.red)
+                Text(error).foregroundStyle(DesignTokens.Palette.State.error)
             }
         }
     }
@@ -107,7 +117,7 @@ struct TestScreen: View {
             Button(model.processing ? "Processing…" : "Process") { model.process() }
                 .disabled(model.processing)
             if let summary = model.outputSummary {
-                Text(summary).font(.callout.monospaced())
+                Text(summary).font(Self.font(.sm).monospaced())
             }
             if !model.outputURLs.isEmpty {
                 ShareLink(items: model.outputURLs) {

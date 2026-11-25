@@ -86,7 +86,7 @@ Built so far (the audio core only, no app UI yet), on both platforms, as in `spe
 
 ### Features that do NOT exist (common hallucination targets)
 - No real app UI yet: `ios/App` and `android/app` are test screens (a self-test, one file in, its
-  settings, process, save), not the product, and use no design tokens. No AIFF-C output, no
+  settings, process, save), not the product. They already use the design tokens. No AIFF-C output, no
   compressed AIFF-C input (ima4, ulaw, alaw).
 - No transfer to Digitakt or Digitakt II (they take files only through Elektron Transfer or SDS).
 - No editing of a machine's projects, presets, patterns or p-locks.
@@ -121,6 +121,10 @@ Built so far (the audio core only, no app UI yet), on both platforms, as in `spe
 - **Same bytes on both platforms.** All processing in 64-bit float, only `+ - * /`, `floor` and
   `sqrt` (all exactly rounded under IEEE 754), plus libsamplerate. No `sin`, `pow` or `log` in the
   audio path: libm results differ between platforms.
-- Uses `iamjarl-design` tokens once there is UI, with no hardcoded colors, spacing, radius or type.
+- Uses `iamjarl-design` tokens, with no hardcoded colors, spacing, radius or type. Pinned to v1.38.0:
+  iOS through the `IAMJARLDesignTokens` package (`exactVersion` in `ios/App/project.yml`), Android
+  through an unedited copy of `dist/kotlin/DesignTokens.kt` from the tag in
+  `android/app/src/main/kotlin/com/iamjarl/design/`. Upgrade both together. A missing value is an
+  issue in iamjarl-design, never a hardcoded value here.
 - Privacy-first: telemetry only if anonymous, and disclosed, following the hub's five rules and
   recipe (`PROJECT_STANDARDS.md`, "Privacy-first"). Not decided for this app yet.

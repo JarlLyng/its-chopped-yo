@@ -34,10 +34,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import com.iamjarl.design.DesignTokens
+import com.iamjarl.design.DesignTokens.ColorToken
 import com.iamjarl.itschoppedyo.core.MonoMode
 import com.iamjarl.itschoppedyo.core.OutputFormat
 import kotlinx.coroutines.Dispatchers
@@ -46,14 +49,46 @@ import kotlinx.coroutines.withContext
 
 /**
  * The test app: a self-test of the audio core on this device, and a manual test of one file.
- * It is a test screen for the spike, not the app's design; it uses no design tokens yet.
+ * It is a test screen for the spike, not the app's design. Colours, spacing and type come from the
+ * IAMJARL design tokens (com.iamjarl.design.DesignTokens, copied from iamjarl-design v1.38.0).
  */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent { MaterialTheme { TestScreen() } }
+        setContent { ChoppedTheme { TestScreen() } }
     }
+}
+
+/** Material 3 with the design tokens: their colours for light and dark, their type scale. */
+@Composable
+fun ChoppedTheme(content: @Composable () -> Unit) {
+    val colors = if (isSystemInDarkTheme()) {
+        darkColorScheme(
+            primary = ColorToken.Dark.primary,
+            onPrimary = ColorToken.Dark.onPrimary,
+            background = ColorToken.Dark.Background.app,
+            onBackground = ColorToken.Dark.Text.primary,
+            surface = ColorToken.Dark.Surface.default,
+            onSurface = ColorToken.Dark.Text.primary,
+            onSurfaceVariant = ColorToken.Dark.Text.secondary,
+            outlineVariant = ColorToken.Dark.Border.subtle,
+            error = ColorToken.Dark.State.error,
+        )
+    } else {
+        lightColorScheme(
+            primary = ColorToken.Light.primary,
+            onPrimary = ColorToken.Light.onPrimary,
+            background = ColorToken.Light.Background.app,
+            onBackground = ColorToken.Light.Text.primary,
+            surface = ColorToken.Light.Surface.default,
+            onSurface = ColorToken.Light.Text.primary,
+            onSurfaceVariant = ColorToken.Light.Text.secondary,
+            outlineVariant = ColorToken.Light.Border.subtle,
+            error = ColorToken.Light.State.error,
+        )
+    }
+    MaterialTheme(colorScheme = colors, typography = DesignTokens.Typography.material3(), content = content)
 }
 
 @Composable
@@ -89,13 +124,13 @@ fun TestScreen() {
 
     Scaffold { padding ->
         Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(DesignTokens.Spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.sm),
         ) {
-            Text("It's chopped, yo!", style = MaterialTheme.typography.headlineMedium)
+            Text("It's chopped, yo!", style = MaterialTheme.typography.headlineSmall)
 
             // ---- Self-test
-            Text("Self-test", style = MaterialTheme.typography.titleMedium)
+            Text("Self-test", style = MaterialTheme.typography.titleMedium, color = DesignTokens.Palette.Text.secondary)
             Button(
                 enabled = !model.selfTestRunning,
                 onClick = {
@@ -110,23 +145,24 @@ fun TestScreen() {
                     }
                 },
             ) { Text(if (model.selfTestRunning) "Running…" else "Run the self-test") }
-            model.selfTestSummary?.let { Text(it, color = if (model.selfTestPassed) Color(0xFF1B873F) else Color.Red) }
-            model.selfTestProblems.forEach { Text(it, color = Color.Red, style = MaterialTheme.typography.bodySmall) }
+            model.selfTestSummary?.let { Text(it, color = if (model.selfTestPassed) DesignTokens.Palette.State.success else DesignTokens.Palette.State.error) }
+            model.selfTestProblems.forEach { Text(it, color = DesignTokens.Palette.State.error, style = MaterialTheme.typography.bodySmall) }
             Text(
                 "Runs every case in the test files on this device and compares each output's SHA-256 with the reference.",
                 style = MaterialTheme.typography.bodySmall,
+                color = DesignTokens.Palette.Text.tertiary,
             )
             HorizontalDivider()
 
             // ---- File
-            Text("File", style = MaterialTheme.typography.titleMedium)
+            Text("File", style = MaterialTheme.typography.titleMedium, color = DesignTokens.Palette.Text.secondary)
             OutlinedButton(onClick = { openFile.launch(arrayOf("audio/*")) }) { Text("Choose a WAV or AIFF file") }
             model.inputInfo?.let { Text(it, fontFamily = FontFamily.Monospace) }
-            model.error?.let { Text(it, color = Color.Red) }
+            model.error?.let { Text(it, color = DesignTokens.Palette.State.error) }
 
             if (model.input != null) {
                 HorizontalDivider()
-                Text("Settings", style = MaterialTheme.typography.titleMedium)
+                Text("Settings", style = MaterialTheme.typography.titleMedium, color = DesignTokens.Palette.Text.secondary)
                 Choice("Channels", listOf("Keep" to MonoMode.KEEP, "Mono (sum)" to MonoMode.SUM,
                     "Left only" to MonoMode.LEFT, "Right only" to MonoMode.RIGHT), model.mono) { model.mono = it }
                 Choice("Sample rate", listOf("Keep" to 0) + TestModel.rates.map { "$it Hz" to it }, model.sampleRate) { model.sampleRate = it }
@@ -141,7 +177,7 @@ fun TestScreen() {
                 Choice("Format", listOf("WAV" to OutputFormat.WAV, "AIFF" to OutputFormat.AIFF), model.format) { model.format = it }
 
                 HorizontalDivider()
-                Text("Output", style = MaterialTheme.typography.titleMedium)
+                Text("Output", style = MaterialTheme.typography.titleMedium, color = DesignTokens.Palette.Text.secondary)
                 Button(
                     enabled = !model.processing,
                     onClick = {
@@ -174,7 +210,7 @@ fun TestScreen() {
                 }
                 model.saved?.let { Text(it) }
             }
-            Spacer(Modifier.padding(16.dp))
+            Spacer(Modifier.padding(DesignTokens.Spacing.lg))
         }
     }
 }

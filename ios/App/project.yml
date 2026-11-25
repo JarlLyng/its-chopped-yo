@@ -21,6 +21,10 @@ settings:
 packages:
   ChoppedCore:
     path: ../..
+  # The design tokens, pinned to the same release as the Android copy (android/app/.../DesignTokens.kt).
+  IAMJARLDesignTokens:
+    url: https://github.com/JarlLyng/iamjarl-design
+    exactVersion: 1.38.0
 targets:
   ItsChoppedYo:
     type: application
@@ -39,6 +43,7 @@ targets:
         product: ChoppedCore
       - package: ChoppedCore
         product: ChoppedSpecRunner
+      - package: IAMJARLDesignTokens
     info:
       path: ItsChoppedYo/Info.plist
       properties:
