@@ -110,6 +110,9 @@ Built so far (the audio core only, no app UI yet), on both platforms, as in `spe
   (`-ffp-contract=off`, never `-ffast-math`), in all four builds.
 - The iOS test app: `cd ios/App && xcodegen generate` (XcodeGen 2.46.0; the `.xcodeproj` is
   generated, not committed), then build in Xcode. No development team is set on purpose.
+- **One emulator per app** (the hub's `PROJECT_STANDARDS.md` §1): this repo's AVD is
+  `ItsChoppedYo_Pixel` on port 5600 (`emulator -avd ItsChoppedYo_Pixel -port 5600`). Send every adb
+  command with `-s emulator-5600`, and check `adb -s emulator-5600 emu avd name` first.
 - The Android test app: `cd android && ./gradlew :app:installDebug`. Saving uses the system folder
   picker; Android 11+ refuses the root of internal storage and `Download` itself, so pick a subfolder.
 - Both test apps and both test suites run the same case runner: `ios/ChoppedSpecRunner` and
