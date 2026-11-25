@@ -134,13 +134,14 @@ Built so far (the audio core only, no app UI yet), on both platforms, as in `spe
 - **Telemetry, decided by the owner:** anonymous crash reports only, with Sentry, on both platforms,
   from the first version users get. No feature counts. Not built yet: there is no Sentry in
   `Package.swift` or the Gradle files.
-  - One Sentry project for both platforms. The DSN comes from the owner; until then build without
-    one, so the app sends nothing.
+  - One Sentry project for both platforms, `itschoppedyo` (Error Monitoring only). The DSN comes
+    from the owner when there is a build for testers; until then build without one, so the app
+    sends nothing.
   - The user is `anonymous`. On Android, `beforeSend` removes `contexts.device.id`.
   - No session replay, screenshots, view hierarchy or tracing.
   - Sample file names and paths are the user's content: replace them with `<path>` in messages,
     exceptions and breadcrumbs.
-  - Android sends nothing until the organization's scrubbing covers Android's `/data/app/~~…==/`
-    paths (the owner's yes, separately).
+  - The organization's scrubbing replaces the random parts of Android's `/data/app/` paths with
+    `[Filtered]`, so Android is not waiting on that any more.
   - Disclose it: `PrivacyInfo.xcprivacy`, the privacy policy and Play Data safety name crash data,
     performance data and other diagnostic data ("Crash logs, Diagnostics").
