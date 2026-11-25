@@ -130,4 +130,17 @@ Built so far (the audio core only, no app UI yet), on both platforms, as in `spe
   `android/app/src/main/kotlin/com/iamjarl/design/`. Upgrade both together. A missing value is an
   issue in iamjarl-design, never a hardcoded value here.
 - Privacy-first: telemetry only if anonymous, and disclosed, following the hub's five rules and
-  recipe (`PROJECT_STANDARDS.md`, "Privacy-first"). Not decided for this app yet.
+  recipe (`PROJECT_STANDARDS.md`, "Privacy-first").
+- **Telemetry, decided by the owner:** anonymous crash reports only, with Sentry, on both platforms,
+  from the first version users get. No feature counts. Not built yet: there is no Sentry in
+  `Package.swift` or the Gradle files.
+  - One Sentry project for both platforms. The DSN comes from the owner; until then build without
+    one, so the app sends nothing.
+  - The user is `anonymous`. On Android, `beforeSend` removes `contexts.device.id`.
+  - No session replay, screenshots, view hierarchy or tracing.
+  - Sample file names and paths are the user's content: replace them with `<path>` in messages,
+    exceptions and breadcrumbs.
+  - Android sends nothing until the organization's scrubbing covers Android's `/data/app/~~…==/`
+    paths (the owner's yes, separately).
+  - Disclose it: `PrivacyInfo.xcprivacy`, the privacy policy and Play Data safety name crash data,
+    performance data and other diagnostic data ("Crash logs, Diagnostics").
