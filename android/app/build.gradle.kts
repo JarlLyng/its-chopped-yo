@@ -1,5 +1,5 @@
-// The Android test app for It's chopped, yo!: a self-test of the audio core on the device, and a
-// manual test of one file. The application ID is the proposed final one; it becomes permanent only
+// It's chopped, yo! on Android: the app, with the self-test of the audio core in debug builds.
+// The application ID is the proposed final one; it becomes permanent only
 // with the first upload to Google Play, which waits for the owner.
 plugins {
     id("com.android.application")
@@ -32,6 +32,8 @@ android {
         getByName("main").kotlin.directories.add("../core/src/sharedTest/kotlin")
         // testdata/ (inputs, cases, expected hashes) goes into debug builds as assets/testdata/.
         getByName("debug").assets.directories.add("build/generated/testdata-assets")
+        // The built-in format presets, the same file the iOS app reads (presets/presets.json).
+        getByName("main").assets.directories.add("build/generated/presets-assets")
     }
 }
 
@@ -53,6 +55,12 @@ val copyTestdataAssets by tasks.registering(Sync::class) {
     into(layout.buildDirectory.dir("generated/testdata-assets/testdata"))
 }
 
+val copyPresetsAsset by tasks.registering(Sync::class) {
+    description = "Copies presets/presets.json into the app's assets."
+    from(rootProject.file("../presets")) { include("presets.json") }
+    into(layout.buildDirectory.dir("generated/presets-assets"))
+}
+
 tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
-    dependsOn(copyTestdataAssets)
+    dependsOn(copyTestdataAssets, copyPresetsAsset)
 }
