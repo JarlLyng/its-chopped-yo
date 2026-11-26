@@ -7,14 +7,28 @@ import UniformTypeIdentifiers
 
 /// Where the navigation stack can go.
 enum Route: Hashable {
-    case file, presets, settings, selfTest
+    case file, presets, saved, settings, selfTest
 }
 
 /// Everything Pro adds. The free app is one file, a built-in preset, then save or share
 /// (the owner's decision, hub `ItsChoppedYo/screen-flow.md`); every one of these opens the Pro sheet.
 enum ProFeature: String, CaseIterable, Identifiable {
-    case record, batch, chain, customPreset, trim, fade, normalize, slices
+    case trim, fade, normalize, slices, record, batch, chain, customPreset
     var id: String { rawValue }
+
+    /// The label on its key.
+    var key: String {
+        switch self {
+        case .record: return "REC"
+        case .batch: return "BATCH"
+        case .chain: return "CHAIN"
+        case .customPreset: return "PRESETS"
+        case .trim: return "TRIM"
+        case .fade: return "FADE"
+        case .normalize: return "NORM"
+        case .slices: return "SLICE"
+        }
+    }
 
     var title: String {
         switch self {
@@ -76,7 +90,7 @@ final class AppModel {
     var working = false
     var error: String?
     var note: String?
-    var saved: String?
+    var saved: String?        // the saved file's name
     var pro: ProFeature?
     var playing = false
 
@@ -210,12 +224,19 @@ final class AppModel {
         playing = false
     }
 
+    /// How far playback has come, 0 to 1, for the playhead on the display.
+    func progress() -> Double {
+        guard let player, player.duration > 0 else { return 0 }
+        return player.currentTime / player.duration
+    }
+
     // MARK: Save
 
     func didSave(_ result: Result<URL, Error>) {
         switch result {
         case .success(let url):
-            saved = "Saved \(url.lastPathComponent) in \(url.deletingLastPathComponent().lastPathComponent)."
+            saved = url.lastPathComponent
+            if path.last != .saved { path.append(.saved) }
         case .failure(let e):
             if (e as NSError).code != NSUserCancelledError { error = "Could not save the file." }
         }

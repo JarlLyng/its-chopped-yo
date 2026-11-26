@@ -7,31 +7,41 @@ import UIKit
 /// Runs every case in testdata on this phone and compares each output's SHA-256 with the
 /// reference. The same runner as the XCTest suite and the Android app.
 struct SelfTestView: View {
+    @Environment(AppModel.self) private var model
     @State private var running = false
     @State private var summary: String?
     @State private var passed = false
     @State private var problems: [String] = []
 
     var body: some View {
-        List {
-            Section {
-                Button(running ? "Running…" : "Run the self-test") { run() }
-                    .disabled(running)
-                    .accessibilityIdentifier("selfTestButton")
+        PanelScreen {
+            PanelHeader(label: "SYSTEM", title: "Self-test") { model.path.removeLast() }
+
+            DisplayPanel {
+                Text(running ? "RUNNING" : summary == nil ? "READY" : passed ? "PASS" : "FAIL").font(.mono(.lg))
                 if let summary {
-                    Text(summary)
-                        .foregroundStyle(passed ? DesignTokens.Palette.State.success : DesignTokens.Palette.State.error)
+                    Text(summary).foregroundStyle(Panel.displayText2)
                         .accessibilityIdentifier("selfTestResult")
                 }
-                ForEach(problems, id: \.self) {
-                    Text($0).font(.token(.xs)).foregroundStyle(DesignTokens.Palette.State.error)
-                }
-            } footer: {
-                Text("Converts every test file on this phone and checks that each result is exactly what the reference gives, byte for byte.")
+                ForEach(problems, id: \.self) { Text($0).font(.mono(.xs)).foregroundStyle(Panel.displayText2) }
             }
+
+            Button { run() } label: {
+                HStack(spacing: DesignTokens.Spacing.md) {
+                    LED(on: running)
+                    Text(running ? "RUNNING…" : "RUN THE SELF-TEST").font(.mono(.sm)).tracking(1)
+                    Spacer()
+                }
+                .padding(.horizontal, DesignTokens.Spacing.lg)
+                .frame(minHeight: 56)
+            }
+            .buttonStyle(KeyStyle(selected: running))
+            .disabled(running)
+            .accessibilityIdentifier("selfTestButton")
+
+            Text("Converts every test file on this phone and checks that each result is exactly what the reference gives, byte for byte.")
+                .font(.token(.sm)).foregroundStyle(DesignTokens.Palette.Text.tertiary)
         }
-        .navigationTitle("Self-test")
-        .navigationBarTitleDisplayMode(.inline)
     }
 
     private func run() {
