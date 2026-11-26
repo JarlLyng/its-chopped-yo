@@ -4,19 +4,20 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.app.Application
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import com.iamjarl.design.DesignTokens
 import com.iamjarl.design.DesignTokens.ColorToken
 import kotlinx.coroutines.channels.Channel
@@ -32,15 +33,16 @@ class MainActivity : ComponentActivity() {
     /** Files handed to the app by another app (share sheet or "open with"). */
     private val incoming = Channel<Uri>(Channel.CONFLATED)
 
+    /** Keeps the app's state when the activity is recreated (dark mode switched, phone rotated). */
+    private val state: AppState by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         if (savedInstanceState == null) handle(intent)
         setContent {
             ChoppedTheme {
-                val scope = rememberCoroutineScope()
-                val context = LocalContext.current
-                val model = remember { AppModel(context.applicationContext, scope) }
+                val model = state.model
                 LaunchedEffect(Unit) { incoming.receiveAsFlow().collect { model.load(it) } }
                 BackHandler(enabled = model.stack.size > 1) { model.back() }
                 AppScreens(model)
@@ -62,6 +64,15 @@ class MainActivity : ComponentActivity() {
             else -> null
         }
         uri?.let { incoming.trySend(it) }
+    }
+}
+
+/** Holds the AppModel across activity recreation; it lives as long as the app's task. */
+class AppState(app: Application) : AndroidViewModel(app) {
+    val model = AppModel(app, viewModelScope)
+
+    override fun onCleared() {
+        model.stop()
     }
 }
 

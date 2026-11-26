@@ -27,22 +27,22 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /** Where the back stack can go. */
-enum class Screen { START, FILE, PRESETS, SETTINGS, SELF_TEST }
+enum class Screen { START, FILE, PRESETS, SAVED, SETTINGS, SELF_TEST }
 
 /**
  * Everything Pro adds. The free app is one file, a built-in preset, then save or share
  * (the owner's decision, hub `ItsChoppedYo/screen-flow.md`); every one of these opens the Pro sheet.
  * The same list and words as ProFeature in the iOS app.
  */
-enum class ProFeature(val title: String, val detail: String) {
-    RECORD("Record", "From the microphone or a USB audio interface."),
-    BATCH("Batch a folder", "A whole folder or many files in, one folder out, the same preset for all."),
-    CHAIN("Sample chains", "Several files joined in equal slots, for samplers that slice evenly."),
-    CUSTOM_PRESET("Your own presets", "Any sample rate, bit depth, channels and WAV or AIFF, saved on this phone."),
-    TRIM("Trim", "Cut the start and the end, snapped to a zero crossing."),
-    FADE("Fade in and out", "Linear or equal power, in milliseconds."),
-    NORMALIZE("Normalize", "Set the peak to a fixed level."),
-    SLICES("Slices", "Cut a file into 2 to 64 equal parts, saved as numbered files."),
+enum class ProFeature(val title: String, val key: String, val detail: String) {
+    TRIM("Trim", "TRIM", "Cut the start and the end, snapped to a zero crossing."),
+    FADE("Fade in and out", "FADE", "Linear or equal power, in milliseconds."),
+    NORMALIZE("Normalize", "NORM", "Set the peak to a fixed level."),
+    SLICES("Slices", "SLICE", "Cut a file into 2 to 64 equal parts, saved as numbered files."),
+    RECORD("Record", "REC", "From the microphone or a USB audio interface."),
+    BATCH("Batch a folder", "BATCH", "A whole folder or many files in, one folder out, the same preset for all."),
+    CHAIN("Sample chains", "CHAIN", "Several files joined in equal slots, for samplers that slice evenly."),
+    CUSTOM_PRESET("Your own presets", "PRESETS", "Any sample rate, bit depth, channels and WAV or AIFF, saved on this phone."),
 }
 
 class LoadedFile(val name: String, val audio: Audio)
@@ -230,6 +230,16 @@ class AppModel(private val context: Context, private val scope: CoroutineScope) 
         playing = false
     }
 
+    /** How far playback has come, 0 to 1, for the playhead on the display. */
+    fun progress(): Float {
+        val p = player ?: return 0f
+        return try {
+            if (p.duration > 0) p.currentPosition.toFloat() / p.duration else 0f
+        } catch (e: IllegalStateException) {
+            0f
+        }
+    }
+
     // ---- Save
 
     /** Writes the result into the document the user created with the system's save dialog. */
@@ -244,8 +254,8 @@ class AppModel(private val context: Context, private val scope: CoroutineScope) 
                 }
             }
             if (ok) {
-                val name = withContext(Dispatchers.IO) { displayName(uri) }
-                saved = "Saved $name."
+                saved = withContext(Dispatchers.IO) { displayName(uri) }
+                if (screen != Screen.SAVED) push(Screen.SAVED)
             } else {
                 error = "Could not save the file."
             }

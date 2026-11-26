@@ -78,7 +78,11 @@ version (hub `ItsChoppedYo/screen-flow.md`): import one WAV or AIFF file (system
 another app), see it before and after, pick one of the built-in format presets in
 `presets/presets.json` (named by format, never by machine), play the result, save it to a folder or
 share it. Pro tools are shown with a badge and open a Pro sheet; Settings has dither, privacy,
-licenses and the self-test. The audio core, as in `specs/audio-processing.md` (v0.3):
+licenses and the self-test. Both apps share one look, "the panel": a display that is always dark
+(the dark theme's tokens in both modes) over a panel of keys with LEDs and small printed group
+labels, one big pad per screen (`ios/App/ItsChoppedYo/Panel.swift`, `android/app/.../Screens.kt`).
+The display text comes from `Describe` in the cores so it reads the same on both. The audio core,
+as in `specs/audio-processing.md` (v0.3):
 - WAV reading (PCM 8/16/24/32-bit, 32/64-bit float, WAVE_FORMAT_EXTENSIBLE) and writing (PCM 16/24-bit).
 - AIFF reading (8/16/24/32-bit; AIFF-C `NONE`, `sowt`, `fl32`, `fl64`) and writing (plain AIFF,
   16/24-bit). Sample rates must be whole numbers of hertz.
