@@ -10,6 +10,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +24,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -170,9 +173,12 @@ private fun PanelScreen(bottom: (@Composable RowScope.() -> Unit)? = null, conte
         bottomBar = {
             if (bottom != null) {
                 Row(
+                    // Above the system's navigation bar: three-button navigation is tall (seen on a
+                    // Galaxy), gesture navigation is a thin line.
                     Modifier.fillMaxWidth().background(DesignTokens.Palette.Background.app)
+                        .navigationBarsPadding()
                         .padding(horizontal = DesignTokens.Spacing.xl, vertical = DesignTokens.Spacing.sm)
-                        .padding(bottom = DesignTokens.Spacing.xl),
+                        .padding(bottom = DesignTokens.Spacing.sm),
                     horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.sm),
                     content = bottom,
                 )
@@ -237,23 +243,29 @@ private fun Key(
 ) {
     val shape = RoundedCornerShape(radius)
     Box(
-        modifier.clip(shape).background(Panel.key)
+        modifier.dimmedWhenDisabled(enabled).clip(shape).background(Panel.key)
             .border(if (selected) BorderStroke(2.dp, DesignTokens.Palette.primary) else BorderStroke(1.dp, Panel.keyBorder), shape)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .alpha(if (enabled) 1f else DesignTokens.Opacity.disabled.toFloat())
             .semantics { this.selected = selected },
         content = content,
     )
 }
+
+/**
+ * Dims the whole key or pad, background included, while it is disabled. Only added then: with an
+ * alpha layer that went from 0.4 to 1 inside the key, its background and border were not drawn
+ * again once it was enabled (seen on a Galaxy A17, Android 17).
+ */
+private fun Modifier.dimmedWhenDisabled(enabled: Boolean) =
+    if (enabled) this else this.alpha(DesignTokens.Opacity.disabled)
 
 /** The one big action on a screen: a pad in the primary colour. */
 @Composable
 private fun Pad(modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit, content: @Composable BoxScope.() -> Unit) {
     val shape = RoundedCornerShape(DesignTokens.Radius.lg)
     Box(
-        modifier.clip(shape).background(DesignTokens.Palette.primary)
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .alpha(if (enabled) 1f else DesignTokens.Opacity.disabled.toFloat()),
+        modifier.dimmedWhenDisabled(enabled).clip(shape).background(DesignTokens.Palette.primary)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         content = content,
     )
 }
@@ -507,9 +519,12 @@ private fun PresetKey(model: AppModel, preset: Preset, modifier: Modifier) {
             Led(on)
             Column {
                 Text(Describe.shortRate(preset.sampleRate), style = mono(Size.base, 0.02f))
-                Text(
+                // Shrinks a little on narrow phones instead of losing a word, like iOS's minimumScaleFactor.
+                BasicText(
                     "${preset.bits} · ${if (preset.channels == Preset.Channels.MONO) "MONO" else "ST"}",
-                    style = mono(Size.xs, 0.02f), color = DesignTokens.Palette.Text.tertiary, maxLines = 1,
+                    style = mono(Size.xs, 0.02f).copy(color = DesignTokens.Palette.Text.tertiary),
+                    maxLines = 1,
+                    autoSize = TextAutoSize.StepBased(minFontSize = Size.xs * 0.8f, maxFontSize = Size.xs),
                 )
             }
         }
