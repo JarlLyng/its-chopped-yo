@@ -109,7 +109,7 @@ as in `specs/audio-processing.md` (v0.3):
 
 ## Requirements
 - iOS 17+ and Android targetSdk 36, minSdk 29 (proposed; no app target exists yet).
-- Development: Xcode 27, Swift 6; JDK 17, Android SDK 36, Gradle wrapper 9.4.1, AGP 9.2.1.
+- Development: Xcode 27, Swift 6; JDK 17, Android SDK 37 (compileSdk 37; targetSdk stays 36), Gradle wrapper 9.4.1, AGP 9.2.1.
 
 ## Build & run
 - `python3 tools/make_testdata.py` regenerates `testdata/` from the reference implementation.
