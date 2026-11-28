@@ -31,6 +31,9 @@ targets:
     platform: iOS
     sources:
       - path: ItsChoppedYo
+      # The built-in format presets, the same file the Android app reads.
+      - path: ../../presets/presets.json
+        buildPhase: resources
       # The self-test's inputs, cases and expected hashes, copied flat into the app bundle.
       - path: ../../testdata
         name: SelfTestData
@@ -54,6 +57,16 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        # WAV and AIFF from another app's share sheet open here (a copy, not in place).
+        LSSupportsOpeningDocumentsInPlace: false
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Audio
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes:
+              - com.microsoft.waveform-audio
+              - public.aiff-audio
+              - public.aifc-audio
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.iamjarl.itschoppedyo

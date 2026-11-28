@@ -73,7 +73,16 @@ known and what is unknown.
 
 ## App features (be precise, do not invent features that don't exist)
 
-Built so far (the audio core only, no app UI yet), on both platforms, as in `specs/audio-processing.md` (v0.3):
+Built so far, on both platforms. The app (`ios/App`, `android/app`) has the free flow of the first
+version (hub `ItsChoppedYo/screen-flow.md`): import one WAV or AIFF file (system picker, or from
+another app), see it before and after, pick one of the built-in format presets in
+`presets/presets.json` (named by format, never by machine), play the result, save it to a folder or
+share it. Pro tools are shown with a badge and open a Pro sheet; Settings has dither, privacy,
+licenses and the self-test. Both apps share one look, "the panel": a display that is always dark
+(the dark theme's tokens in both modes) over a panel of keys with LEDs and small printed group
+labels, one big pad per screen (`ios/App/ItsChoppedYo/Panel.swift`, `android/app/.../Screens.kt`).
+The display text comes from `Describe` in the cores so it reads the same on both. The audio core,
+as in `specs/audio-processing.md` (v0.3):
 - WAV reading (PCM 8/16/24/32-bit, 32/64-bit float, WAVE_FORMAT_EXTENSIBLE) and writing (PCM 16/24-bit).
 - AIFF reading (8/16/24/32-bit; AIFF-C `NONE`, `sowt`, `fl32`, `fl64`) and writing (plain AIFF,
   16/24-bit). Sample rates must be whole numbers of hertz.
@@ -85,9 +94,12 @@ Built so far (the audio core only, no app UI yet), on both platforms, as in `spe
 - Equal slices and sample chains.
 
 ### Features that do NOT exist (common hallucination targets)
-- No real app UI yet: `ios/App` and `android/app` are test screens (a self-test, one file in, its
-  settings, process, save), not the product. They already use the design tokens. No AIFF-C output, no
-  compressed AIFF-C input (ima4, ulaw, alaw).
+- No Pro yet: purchases are not wired, and none of the Pro tools (record, batch, chains, own
+  presets, trim, fade, normalize, slices) has a screen. The core can trim, fade, normalize, slice
+  and chain; the app does not offer it.
+- Only WAV and AIFF in (the owner's decision for the first version): no MP3, M4A, FLAC or CAF. No
+  AIFF-C output, no compressed AIFF-C input (ima4, ulaw, alaw).
+- No crash reports yet (decided, not built; see Conventions).
 - No transfer to Digitakt or Digitakt II (they take files only through Elektron Transfer or SDS).
 - No editing of a machine's projects, presets, patterns or p-locks.
 - No effects (EQ, compression, time-stretch, pitch), no sequencer, no pads, no stem separation.
@@ -108,14 +120,15 @@ Built so far (the audio core only, no app UI yet), on both platforms, as in `spe
   emulator (ART and the NDK library), with the test files packed into the test APK's assets.
 - libsamplerate is always compiled with the flags in `third_party/libsamplerate/README.md`
   (`-ffp-contract=off`, never `-ffast-math`), in all four builds.
-- The iOS test app: `cd ios/App && xcodegen generate` (XcodeGen 2.46.0; the `.xcodeproj` is
+- The iOS app: `cd ios/App && xcodegen generate` (XcodeGen 2.46.0; the `.xcodeproj` is
   generated, not committed), then build in Xcode. No development team is set on purpose.
 - **One emulator per app** (the hub's `PROJECT_STANDARDS.md` §1): this repo's AVD is
   `ItsChoppedYo_Pixel` on port 5600 (`emulator -avd ItsChoppedYo_Pixel -port 5600`). Send every adb
   command with `-s emulator-5600`, and check `adb -s emulator-5600 emu avd name` first.
-- The Android test app: `cd android && ./gradlew :app:installDebug`. Saving uses the system folder
-  picker; Android 11+ refuses the root of internal storage and `Download` itself, so pick a subfolder.
-- Both test apps and both test suites run the same case runner: `ios/ChoppedSpecRunner` and
+- The Android app: `cd android && ./gradlew :app:installDebug`. Saving uses the system's save
+  dialog with the MIME type Android's own table gives for the extension (`audio/x-wav`), or the
+  system puts " (1)" after ".wav" when the name is taken. The self-test is in debug builds only.
+- Both apps' self-test and both test suites run the same case runner: `ios/ChoppedSpecRunner` and
   `android/core/src/sharedTest`.
 - A change to the spec changes `tools/reference.py` and the testdata in the same commit; both
   cores must then pass unchanged expectations.

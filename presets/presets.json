@@ -1,0 +1,10 @@
+{
+  "about": "The built-in format presets, the same file in both apps. Named by format, never by machine. Each one is a format some sampler's official manual asks for; which machines is kept outside the app.",
+  "version": 1,
+  "presets": [
+    { "id": "wav-48k-16-mono",   "name": "48 kHz · 16-bit · mono",   "sampleRate": 48000, "bits": 16, "channels": "mono",   "format": "wav" },
+    { "id": "wav-48k-16-stereo", "name": "48 kHz · 16-bit · stereo", "sampleRate": 48000, "bits": 16, "channels": "stereo", "format": "wav" },
+    { "id": "wav-48k-24-mono",   "name": "48 kHz · 24-bit · mono",   "sampleRate": 48000, "bits": 24, "channels": "mono",   "format": "wav" },
+    { "id": "wav-48k-24-stereo", "name": "48 kHz · 24-bit · stereo", "sampleRate": 48000, "bits": 24, "channels": "stereo", "format": "wav" }
+  ]
+}
