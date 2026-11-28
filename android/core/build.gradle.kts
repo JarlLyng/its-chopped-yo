@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.iamjarl.itschoppedyo.core"
-    compileSdk = 36
+    compileSdk = 37
     ndkVersion = "27.1.12297006"
 
     defaultConfig {

@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.iamjarl.itschoppedyo"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.iamjarl.itschoppedyo"
