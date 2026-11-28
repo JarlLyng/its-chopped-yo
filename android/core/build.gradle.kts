@@ -40,7 +40,7 @@ android {
 dependencies {
     testImplementation("junit:junit:4.13.2")
     // A real org.json for the JVM tests (Android's own is a stub there).
-    testImplementation("org.json:json:20240303")
+    testImplementation("org.json:json:20260814")
 
     androidTestImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test:runner:1.6.2")
